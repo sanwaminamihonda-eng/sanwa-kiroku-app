@@ -176,3 +176,23 @@ export async function clearDemoData(): Promise<void> {
     await Promise.all(deletePromises);
   }
 }
+
+// ========================================
+// 一括操作（Bulk Operations）
+// ========================================
+
+/**
+ * 複数利用者への一括記録保存
+ */
+export async function saveBulkRecords(
+  records: Array<{
+    residentId: string;
+    date: string;
+    data: Partial<DailyRecord>;
+  }>
+): Promise<void> {
+  const promises = records.map(({ residentId, date, data }) =>
+    saveDailyRecord(residentId, date, data)
+  );
+  await Promise.all(promises);
+}

@@ -2,8 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { SEED_RESIDENTS, generateSeedRecords, getRecentDates } from './seed-data';
 
 describe('SEED_RESIDENTS', () => {
-  it('should have 10 residents', () => {
-    expect(SEED_RESIDENTS).toHaveLength(10);
+  it('should have 30 residents', () => {
+    expect(SEED_RESIDENTS).toHaveLength(30);
   });
 
   it('should have required fields for each resident', () => {
@@ -66,9 +66,9 @@ describe('generateSeedRecords', () => {
 });
 
 describe('getRecentDates', () => {
-  it('should return 3 dates by default', () => {
+  it('should return 7 dates by default', () => {
     const dates = getRecentDates();
-    expect(dates).toHaveLength(3);
+    expect(dates).toHaveLength(7);
   });
 
   it('should return specified number of dates', () => {

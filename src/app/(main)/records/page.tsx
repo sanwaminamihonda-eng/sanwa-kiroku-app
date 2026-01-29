@@ -37,13 +37,21 @@ export default function RecordsPage() {
       {/* ヘッダー */}
       <header className="bg-white shadow-sm sticky top-0 z-40">
         <div className="max-w-screen-xl mx-auto px-4 py-3">
-          <div className="flex items-center gap-3">
-            <Link href="/" className="text-gray-600 hover:text-gray-900">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Link href="/dashboard" className="text-gray-600 hover:text-gray-900">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </Link>
+              <h1 className="text-xl font-bold text-gray-900">記録入力</h1>
+            </div>
+            <Link
+              href="/records/bulk"
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+            >
+              一括入力
             </Link>
-            <h1 className="text-xl font-bold text-gray-900">記録入力</h1>
           </div>
         </div>
       </header>

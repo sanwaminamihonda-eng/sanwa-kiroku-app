@@ -33,9 +33,9 @@ export default function MainLayout({
   }
 
   return (
-    <div className={isDemo() ? 'pb-14' : ''}>
+    <>
       {children}
       <DemoPanel />
-    </div>
+    </>
   );
 }

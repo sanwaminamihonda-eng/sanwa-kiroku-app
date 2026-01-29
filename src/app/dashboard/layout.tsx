@@ -4,7 +4,6 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { DemoPanel } from '@/components/demo/DemoPanel';
-import { isDemo } from '@/lib/env';
 
 export default function DashboardLayout({
   children,
@@ -33,9 +32,9 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className={isDemo() ? 'pb-14' : ''}>
+    <>
       {children}
       <DemoPanel />
-    </div>
+    </>
   );
 }

@@ -57,11 +57,18 @@ export default function DashboardPage() {
         {/* クイックアクション */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <Link
+            href="/records/bulk"
+            className="bg-blue-600 text-white rounded-xl p-4 text-center hover:bg-blue-700 transition-colors shadow-md"
+          >
+            <div className="text-2xl mb-1">⚡</div>
+            <div className="font-medium">一括入力</div>
+          </Link>
+          <Link
             href="/records"
             className="bg-blue-500 text-white rounded-xl p-4 text-center hover:bg-blue-600 transition-colors"
           >
             <div className="text-2xl mb-1">📝</div>
-            <div className="font-medium">記録入力</div>
+            <div className="font-medium">個別入力</div>
           </Link>
           <Link
             href="/history"
