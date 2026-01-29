@@ -9,7 +9,6 @@ import {
   query,
   where,
   orderBy,
-  type QueryConstraint,
   type DocumentData,
   Timestamp,
   setDoc,

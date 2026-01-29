@@ -27,7 +27,7 @@ export function LoginForm() {
       setError(null);
       await signIn(email, password);
       router.push('/');
-    } catch (err) {
+    } catch {
       setError('ログインに失敗しました。認証情報を確認してください。');
     } finally {
       setLoading(null);
@@ -40,7 +40,7 @@ export function LoginForm() {
       setError(null);
       await signInAsGuest();
       router.push('/');
-    } catch (err) {
+    } catch {
       setError('ゲストログインに失敗しました');
     } finally {
       setLoading(null);

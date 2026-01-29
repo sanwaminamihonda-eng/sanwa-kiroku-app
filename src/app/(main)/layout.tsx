@@ -4,7 +4,6 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { DemoPanel } from '@/components/demo/DemoPanel';
-import { isDemo } from '@/lib/env';
 
 export default function MainLayout({
   children,
