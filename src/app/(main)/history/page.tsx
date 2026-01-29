@@ -175,8 +175,10 @@ interface ResidentRecordCardProps {
   onUpdate: () => void;
 }
 
+type CategoryType = 'vital' | 'meal' | 'excretion' | 'hydration';
+
 function ResidentRecordCard({ resident, record, date, onUpdate }: ResidentRecordCardProps) {
-  const [expanded, setExpanded] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<CategoryType | null>(null);
   const [editingItem, setEditingItem] = useState<{
     type: 'vital' | 'meal' | 'excretion' | 'hydration';
     item: Vital | Meal | Excretion | Hydration;
@@ -217,10 +219,7 @@ function ResidentRecordCard({ resident, record, date, onUpdate }: ResidentRecord
     <>
       <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-slate-100">
         {/* Resident Info Header */}
-        <div
-          className="px-4 py-3 flex items-center justify-between cursor-pointer active:bg-slate-50"
-          onClick={() => setExpanded(!expanded)}
-        >
+        <div className="px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center flex-shrink-0">
               <span className="text-slate-600 font-bold text-lg">{resident.name.charAt(0)}</span>
@@ -230,26 +229,21 @@ function ResidentRecordCard({ resident, record, date, onUpdate }: ResidentRecord
               <p className="text-xs text-slate-500">{resident.roomNumber}号室</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            {!hasAnyRecord && (
-              <span className="text-xs text-slate-400 bg-slate-100 px-2 py-1 rounded">未記録</span>
-            )}
-            <svg
-              className={`w-5 h-5 text-slate-400 transition-transform ${expanded ? 'rotate-180' : ''}`}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
-          </div>
+          {!hasAnyRecord && (
+            <span className="text-xs text-slate-400 bg-slate-100 px-2 py-1 rounded">未記録</span>
+          )}
         </div>
 
-        {/* Summary (Always Visible) */}
+        {/* Summary Tabs (Clickable) */}
         {hasAnyRecord && (
           <div className="px-4 pb-3">
             <div className="grid grid-cols-4 gap-2 text-center">
-              <div className={`p-2 rounded-lg ${hasVitals ? categoryColors.vital.bg : 'bg-slate-50'}`}>
+              <button
+                onClick={() => setSelectedCategory(selectedCategory === 'vital' ? null : 'vital')}
+                className={`p-2 rounded-lg transition-all ${
+                  hasVitals ? categoryColors.vital.bg : 'bg-slate-50'
+                } ${selectedCategory === 'vital' ? 'ring-2 ring-[#c97476] ring-offset-1' : ''}`}
+              >
                 <p className="text-xs text-slate-500">バイタル</p>
                 {latestVital ? (
                   <p className="text-sm font-medium text-slate-700">
@@ -258,33 +252,48 @@ function ResidentRecordCard({ resident, record, date, onUpdate }: ResidentRecord
                 ) : (
                   <p className="text-sm text-slate-400">-</p>
                 )}
-              </div>
-              <div className={`p-2 rounded-lg ${hasExcretions ? categoryColors.excretion.bg : 'bg-slate-50'}`}>
+              </button>
+              <button
+                onClick={() => setSelectedCategory(selectedCategory === 'excretion' ? null : 'excretion')}
+                className={`p-2 rounded-lg transition-all ${
+                  hasExcretions ? categoryColors.excretion.bg : 'bg-slate-50'
+                } ${selectedCategory === 'excretion' ? 'ring-2 ring-[#c9a44a] ring-offset-1' : ''}`}
+              >
                 <p className="text-xs text-slate-500">排泄</p>
                 <p className="text-sm font-medium text-slate-700">
                   {record?.excretions.length || 0}回
                 </p>
-              </div>
-              <div className={`p-2 rounded-lg ${hasMeals ? categoryColors.meal.bg : 'bg-slate-50'}`}>
+              </button>
+              <button
+                onClick={() => setSelectedCategory(selectedCategory === 'meal' ? null : 'meal')}
+                className={`p-2 rounded-lg transition-all ${
+                  hasMeals ? categoryColors.meal.bg : 'bg-slate-50'
+                } ${selectedCategory === 'meal' ? 'ring-2 ring-[#4da672] ring-offset-1' : ''}`}
+              >
                 <p className="text-xs text-slate-500">食事</p>
                 <p className="text-sm font-medium text-slate-700">
                   {record?.meals.length || 0}食
                 </p>
-              </div>
-              <div className={`p-2 rounded-lg ${hasHydrations ? categoryColors.hydration.bg : 'bg-slate-50'}`}>
+              </button>
+              <button
+                onClick={() => setSelectedCategory(selectedCategory === 'hydration' ? null : 'hydration')}
+                className={`p-2 rounded-lg transition-all ${
+                  hasHydrations ? categoryColors.hydration.bg : 'bg-slate-50'
+                } ${selectedCategory === 'hydration' ? 'ring-2 ring-[#4a9ebe] ring-offset-1' : ''}`}
+              >
                 <p className="text-xs text-slate-500">水分</p>
                 <p className="text-sm font-medium text-slate-700">
                   {totalHydration}ml
                 </p>
-              </div>
+              </button>
             </div>
           </div>
         )}
 
-        {/* Expanded Details */}
-        {expanded && hasAnyRecord && (
-          <div className="px-4 pb-4 pt-2 border-t border-slate-100 space-y-4">
-            {hasVitals && (
+        {/* Category Details (Selected Only) */}
+        {selectedCategory && hasAnyRecord && (
+          <div className="px-4 pb-4 pt-2 border-t border-slate-100">
+            {selectedCategory === 'vital' && hasVitals && (
               <RecordSection title="バイタル" category="vital">
                 {record!.vitals.map((vital) => (
                   <VitalItem
@@ -297,7 +306,7 @@ function ResidentRecordCard({ resident, record, date, onUpdate }: ResidentRecord
               </RecordSection>
             )}
 
-            {hasMeals && (
+            {selectedCategory === 'meal' && hasMeals && (
               <RecordSection title="食事" category="meal">
                 {record!.meals.map((meal) => (
                   <MealItem
@@ -310,7 +319,7 @@ function ResidentRecordCard({ resident, record, date, onUpdate }: ResidentRecord
               </RecordSection>
             )}
 
-            {hasExcretions && (
+            {selectedCategory === 'excretion' && hasExcretions && (
               <RecordSection title="排泄" category="excretion">
                 {record!.excretions.map((excretion) => (
                   <ExcretionItem
@@ -323,7 +332,7 @@ function ResidentRecordCard({ resident, record, date, onUpdate }: ResidentRecord
               </RecordSection>
             )}
 
-            {hasHydrations && (
+            {selectedCategory === 'hydration' && hasHydrations && (
               <RecordSection title="水分" category="hydration">
                 {record!.hydrations.map((hydration) => (
                   <HydrationItem
