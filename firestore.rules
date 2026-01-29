@@ -16,7 +16,7 @@ service cloud.firestore {
     match /demo_residents/{document=**} {
       allow read, write: if true;
     }
-    match /demo_records/{residentId}/daily/{date} {
+    match /demo_records/{document=**} {
       allow read, write: if true;
     }
     match /demo_users/{document=**} {
