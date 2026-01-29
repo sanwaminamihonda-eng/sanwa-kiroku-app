@@ -44,7 +44,7 @@ export function DemoPanel() {
       setLoading('reset');
       setMessage(null);
 
-      const result = await resetDemoData();
+      await resetDemoData();
       setMessage(`リセット完了`);
 
       setTimeout(() => {

@@ -62,7 +62,7 @@ const withPWA = withPWAInit({
 });
 
 const nextConfig: NextConfig = {
-  // 他の設定があればここに追加
+  trailingSlash: false,
 };
 
 export default withPWA(nextConfig);
