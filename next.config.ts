@@ -63,6 +63,9 @@ const withPWA = withPWAInit({
 
 const nextConfig: NextConfig = {
   trailingSlash: false,
+  // Firebase Hosting (webframeworks) 用: Turbopack でのビルドを許可
+  // next-pwa が webpack config を追加するため、空の turbopack 設定が必要
+  turbopack: {},
 };
 
 export default withPWA(nextConfig);
