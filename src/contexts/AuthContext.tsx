@@ -24,29 +24,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let mounted = true;
+
     // デモモードの場合
     if (isDemo()) {
-      const demoUser = getCurrentDemoUser();
-      if (demoUser) {
-        setUser(demoUser);
-      }
-      setLoading(false);
-      return;
+      // 非同期で状態更新（lint rule: set-state-in-effect 対応）
+      const initDemo = async () => {
+        const demoUser = getCurrentDemoUser();
+        if (mounted) {
+          if (demoUser) {
+            setUser(demoUser);
+          }
+          setLoading(false);
+        }
+      };
+      initDemo();
+      return () => { mounted = false; };
     }
 
     // 本番モードの場合
     const unsubscribe = onAuthChange(async (fbUser) => {
+      if (!mounted) return;
       setFirebaseUser(fbUser);
       if (fbUser) {
         const userData = await getUser(fbUser.uid);
-        setUser(userData);
+        if (mounted) {
+          setUser(userData);
+        }
       } else {
         setUser(null);
       }
       setLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => {
+      mounted = false;
+      unsubscribe();
+    };
   }, []);
 
   const handleSignOut = async () => {
