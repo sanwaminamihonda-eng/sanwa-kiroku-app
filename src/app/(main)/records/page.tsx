@@ -563,9 +563,14 @@ function ExcretionInputList({ residents, records, today, savingId, setSavingId, 
 // ========================================
 function HydrationInputList({ residents, records, today, savingId, setSavingId, onSaved }: InputListProps) {
   const style = categoryStyles.hydration;
-  const [inputs, setInputs] = useState<Record<string, { amount: number; type: string }>>({});
+  const [inputs, setInputs] = useState<Record<string, {
+    amount: number | 'other';
+    type: string;
+    customType: string;
+    customAmount: string;
+  }>>({});
 
-  const getInput = (id: string) => inputs[id] || { amount: 150, type: 'お茶' };
+  const getInput = (id: string) => inputs[id] || { amount: 150, type: 'お茶', customType: '', customAmount: '' };
 
   const updateInput = (id: string, field: string, value: number | string) => {
     setInputs((prev) => ({
@@ -578,13 +583,19 @@ function HydrationInputList({ residents, records, today, savingId, setSavingId, 
     const input = getInput(resident.id);
     setSavingId(resident.id);
 
+    // 「その他」の場合はカスタム値を使用
+    const finalType = input.type === 'その他' ? (input.customType || 'その他') : input.type;
+    const finalAmount = input.amount === 'other'
+      ? (parseInt(input.customAmount) || 0)
+      : input.amount;
+
     try {
       const existing = records[resident.id];
       const hydration: Hydration = {
         id: generateId(),
         time: formatTime(new Date()),
-        amount: input.amount,
-        drinkType: input.type,
+        amount: finalAmount,
+        drinkType: finalType,
         note: '',
         recordedBy: 'demo-guest-user',
         recordedAt: new Date(),
@@ -602,8 +613,8 @@ function HydrationInputList({ residents, records, today, savingId, setSavingId, 
   };
 
   const hasRecord = (id: string) => (records[id]?.hydrations?.length ?? 0) > 0;
-  const amounts = [100, 150, 200];
-  const types = ['お茶', '水', 'コーヒー'];
+  const amounts: (number | 'other')[] = [100, 150, 200, 'other'];
+  const types = ['お茶', '水', 'その他'];
 
   return (
     <div className="space-y-2">
@@ -611,6 +622,8 @@ function HydrationInputList({ residents, records, today, savingId, setSavingId, 
         const input = getInput(resident.id);
         const recorded = hasRecord(resident.id);
         const isSaving = savingId === resident.id;
+        const showCustomType = input.type === 'その他';
+        const showCustomAmount = input.amount === 'other';
 
         return (
           <div
@@ -637,6 +650,15 @@ function HydrationInputList({ residents, records, today, savingId, setSavingId, 
                     </button>
                   ))}
                 </div>
+                {showCustomType && (
+                  <input
+                    type="text"
+                    value={input.customType}
+                    onChange={(e) => updateInput(resident.id, 'customType', e.target.value)}
+                    placeholder="飲み物を入力"
+                    className="mt-1 w-full px-2 py-1.5 text-xs border border-slate-200 rounded-lg focus:border-[#3a98c4] focus:ring-1 focus:ring-[#3a98c4] outline-none"
+                  />
+                )}
               </div>
               <div className="flex-1">
                 <label className="text-xs text-slate-500 block mb-1">量(ml)</label>
@@ -649,10 +671,19 @@ function HydrationInputList({ residents, records, today, savingId, setSavingId, 
                         input.amount === amount ? style.selected : 'bg-slate-100 hover:bg-slate-200'
                       }`}
                     >
-                      {amount}
+                      {amount === 'other' ? '他' : amount}
                     </button>
                   ))}
                 </div>
+                {showCustomAmount && (
+                  <input
+                    type="number"
+                    value={input.customAmount}
+                    onChange={(e) => updateInput(resident.id, 'customAmount', e.target.value)}
+                    placeholder="ml"
+                    className="mt-1 w-full px-2 py-1.5 text-xs border border-slate-200 rounded-lg focus:border-[#3a98c4] focus:ring-1 focus:ring-[#3a98c4] outline-none text-center"
+                  />
+                )}
               </div>
             </div>
 
