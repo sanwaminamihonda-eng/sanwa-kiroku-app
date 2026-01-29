@@ -18,19 +18,19 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  // デモモードの場合は初期値を同期的に設定
-  const [user, setUser] = useState<User | null>(() => {
-    if (isDemo()) {
-      return getCurrentDemoUser();
-    }
-    return null;
-  });
+  // SSR/CSR の hydration mismatch を避けるため、初期値は常に null/true
+  const [user, setUser] = useState<User | null>(null);
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
-  const [loading, setLoading] = useState(() => !isDemo());
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // デモモードの場合は既に初期化済み
+    // デモモードの場合
     if (isDemo()) {
+      const demoUser = getCurrentDemoUser();
+      if (demoUser) {
+        setUser(demoUser);
+      }
+      setLoading(false);
       return;
     }
 
