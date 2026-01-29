@@ -67,7 +67,7 @@ export function DemoPanel() {
     return (
       <button
         onClick={() => setIsExpanded(true)}
-        className="fixed bottom-4 right-4 bg-amber-500 text-white text-xs font-medium px-3 py-1.5 rounded-full shadow-lg hover:bg-amber-600 transition-colors z-50"
+        className="fixed top-4 right-4 bg-amber-500 text-white text-xs font-medium px-3 py-1.5 rounded-full shadow-lg hover:bg-amber-600 transition-colors z-50"
       >
         DEMO
       </button>
@@ -76,7 +76,7 @@ export function DemoPanel() {
 
   // 展開時：コンパクトなパネル
   return (
-    <div className="fixed bottom-4 right-4 bg-white border border-gray-200 rounded-lg shadow-lg p-3 z-50 min-w-[200px]">
+    <div className="fixed top-4 right-4 bg-white border border-gray-200 rounded-lg shadow-lg p-3 z-50 min-w-[200px]">
       <div className="flex items-center justify-between mb-2">
         <span className="text-amber-600 font-medium text-sm">デモモード</span>
         <button
