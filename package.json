@@ -4,7 +4,7 @@
   "description": "介護施設向け記録アプリ",
   "private": true,
   "scripts": {
-    "dev": "next dev --webpack -p 3003",
+    "dev": "next dev -p 3003",
     "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
