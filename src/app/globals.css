@@ -1,8 +1,28 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f9fafb;
-  --foreground: #111827;
+  /* ベースカラー */
+  --background: #f8fafc;
+  --foreground: #1e293b;
+
+  /* プライマリ（Slate系 - 信頼感・落ち着き） */
+  --primary: #475569;
+  --primary-light: #64748b;
+  --primary-lighter: #e2e8f0;
+
+  /* カテゴリカラー（同トーンのソフトパステル） */
+  --vital: #f1a5a8;
+  --vital-light: #fce7e8;
+  --meal: #86d4a8;
+  --meal-light: #e6f7ed;
+  --excretion: #f5c97a;
+  --excretion-light: #fef6e6;
+  --hydration: #7ec8e8;
+  --hydration-light: #e6f5fb;
+
+  /* アクセント（成功・完了） */
+  --success: #10b981;
+  --success-light: #d1fae5;
 }
 
 @theme inline {
@@ -60,4 +80,20 @@ body {
 
 .animate-slide-down {
   animation: slide-down 0.3s ease-out;
+}
+
+/* モーダル用スライドアップアニメーション */
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out;
 }

@@ -1,10 +1,18 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { getResidents, getDailyRecord } from '@/lib/firestore';
+import { getResidents, getDailyRecord, saveDailyRecord } from '@/lib/firestore';
 import { getTodayString, formatDate } from '@/lib/utils';
 import { BottomNav } from '@/components/navigation/BottomNav';
 import type { Resident, DailyRecord, Vital, Meal, Excretion, Hydration } from '@/types';
+
+// カテゴリカラー（records画面と統一）
+const categoryColors = {
+  vital: { bg: 'bg-[#fce7e8]', text: 'text-[#c97476]', badge: 'bg-[#fce7e8] text-[#c97476]' },
+  meal: { bg: 'bg-[#e6f7ed]', text: 'text-[#4da672]', badge: 'bg-[#e6f7ed] text-[#4da672]' },
+  excretion: { bg: 'bg-[#fef6e6]', text: 'text-[#c9a44a]', badge: 'bg-[#fef6e6] text-[#c9a44a]' },
+  hydration: { bg: 'bg-[#e6f5fb]', text: 'text-[#4a9ebe]', badge: 'bg-[#e6f5fb] text-[#4a9ebe]' },
+};
 
 interface ResidentWithRecord {
   resident: Resident;
@@ -52,7 +60,6 @@ export default function HistoryPage() {
     setDate(getTodayString());
   };
 
-  // Filter data by selected resident
   const filteredData = selectedResidentId === 'all'
     ? data
     : data.filter((d) => d.resident.id === selectedResidentId);
@@ -60,21 +67,21 @@ export default function HistoryPage() {
   const isToday = date === getTodayString();
 
   return (
-    <div className="min-h-screen bg-gray-100 pb-20">
+    <div className="min-h-screen bg-slate-50 pb-20">
       {/* Header */}
       <header className="bg-white shadow-sm sticky top-0 z-40">
         <div className="px-4 py-3">
-          <h1 className="text-lg font-bold text-gray-900">記録履歴</h1>
+          <h1 className="text-lg font-bold text-slate-800">記録履歴</h1>
         </div>
 
         {/* Date Navigation */}
-        <div className="flex items-center justify-between px-4 py-2 border-t border-gray-100">
+        <div className="flex items-center justify-between px-4 py-2 border-t border-slate-100">
           <button
             onClick={() => changeDate(-1)}
-            className="p-2 rounded-lg hover:bg-gray-100 active:bg-gray-200"
+            className="p-2 rounded-lg hover:bg-slate-100 active:bg-slate-200"
             aria-label="前日"
           >
-            <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-6 h-6 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
           </button>
@@ -84,11 +91,11 @@ export default function HistoryPage() {
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="text-lg font-bold text-gray-900 bg-transparent border-none focus:outline-none text-center cursor-pointer"
+              className="text-lg font-bold text-slate-800 bg-transparent border-none focus:outline-none text-center cursor-pointer"
             />
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-slate-500">
               {new Date(date).toLocaleDateString('ja-JP', { weekday: 'long' })}
-              {isToday && <span className="ml-2 text-blue-600 font-medium">(今日)</span>}
+              {isToday && <span className="ml-2 text-slate-600 font-medium">(今日)</span>}
             </p>
           </div>
 
@@ -96,7 +103,7 @@ export default function HistoryPage() {
             onClick={() => changeDate(1)}
             disabled={isToday}
             className={`p-2 rounded-lg ${
-              isToday ? 'text-gray-300' : 'hover:bg-gray-100 active:bg-gray-200 text-gray-600'
+              isToday ? 'text-slate-200' : 'hover:bg-slate-100 active:bg-slate-200 text-slate-500'
             }`}
             aria-label="翌日"
           >
@@ -107,11 +114,11 @@ export default function HistoryPage() {
         </div>
 
         {/* Today Button & Resident Filter */}
-        <div className="flex items-center gap-2 px-4 py-2 border-t border-gray-100">
+        <div className="flex items-center gap-2 px-4 py-2 border-t border-slate-100">
           {!isToday && (
             <button
               onClick={goToToday}
-              className="px-3 py-1.5 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100"
+              className="px-3 py-1.5 text-sm font-medium text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200"
             >
               今日に戻る
             </button>
@@ -119,7 +126,7 @@ export default function HistoryPage() {
           <select
             value={selectedResidentId}
             onChange={(e) => setSelectedResidentId(e.target.value)}
-            className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="flex-1 px-3 py-2 text-sm border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-slate-300"
           >
             <option value="all">全ての利用者</option>
             {residents.map((resident) => (
@@ -135,10 +142,10 @@ export default function HistoryPage() {
       <main className="p-2">
         {loading ? (
           <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-500" />
+            <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-slate-400" />
           </div>
         ) : filteredData.length === 0 ? (
-          <div className="bg-white rounded-xl shadow-sm p-8 text-center text-gray-500">
+          <div className="bg-white rounded-xl shadow-sm p-8 text-center text-slate-500 border border-slate-100">
             <p>利用者が登録されていません</p>
           </div>
         ) : (
@@ -148,6 +155,8 @@ export default function HistoryPage() {
                 key={resident.id}
                 resident={resident}
                 record={record}
+                date={date}
+                onUpdate={loadData}
               />
             ))}
           </div>
@@ -162,10 +171,16 @@ export default function HistoryPage() {
 interface ResidentRecordCardProps {
   resident: Resident;
   record: DailyRecord | null;
+  date: string;
+  onUpdate: () => void;
 }
 
-function ResidentRecordCard({ resident, record }: ResidentRecordCardProps) {
+function ResidentRecordCard({ resident, record, date, onUpdate }: ResidentRecordCardProps) {
   const [expanded, setExpanded] = useState(false);
+  const [editingItem, setEditingItem] = useState<{
+    type: 'vital' | 'meal' | 'excretion' | 'hydration';
+    item: Vital | Meal | Excretion | Hydration;
+  } | null>(null);
 
   const hasVitals = record && record.vitals.length > 0;
   const hasExcretions = record && record.excretions.length > 0;
@@ -173,141 +188,188 @@ function ResidentRecordCard({ resident, record }: ResidentRecordCardProps) {
   const hasHydrations = record && record.hydrations.length > 0;
   const hasAnyRecord = hasVitals || hasExcretions || hasMeals || hasHydrations;
 
-  // Total hydration
   const totalHydration = record?.hydrations.reduce((sum, h) => sum + h.amount, 0) || 0;
-
-  // Latest vital
   const latestVital = record?.vitals[record.vitals.length - 1];
 
+  const handleDelete = async (type: 'vital' | 'meal' | 'excretion' | 'hydration', itemId: string) => {
+    if (!record) return;
+    if (!confirm('この記録を削除しますか？')) return;
+
+    try {
+      const updateData: Partial<DailyRecord> = {};
+      if (type === 'vital') {
+        updateData.vitals = record.vitals.filter((v) => v.id !== itemId);
+      } else if (type === 'meal') {
+        updateData.meals = record.meals.filter((m) => m.id !== itemId);
+      } else if (type === 'excretion') {
+        updateData.excretions = record.excretions.filter((e) => e.id !== itemId);
+      } else if (type === 'hydration') {
+        updateData.hydrations = record.hydrations.filter((h) => h.id !== itemId);
+      }
+      await saveDailyRecord(resident.id, date, updateData);
+      onUpdate();
+    } catch (error) {
+      console.error('Delete failed:', error);
+    }
+  };
+
   return (
-    <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-      {/* Resident Info Header */}
-      <div
-        className="px-4 py-3 flex items-center justify-between cursor-pointer active:bg-gray-50"
-        onClick={() => setExpanded(!expanded)}
-      >
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-            <span className="text-blue-600 font-bold text-lg">{resident.name.charAt(0)}</span>
+    <>
+      <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-slate-100">
+        {/* Resident Info Header */}
+        <div
+          className="px-4 py-3 flex items-center justify-between cursor-pointer active:bg-slate-50"
+          onClick={() => setExpanded(!expanded)}
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center flex-shrink-0">
+              <span className="text-slate-600 font-bold text-lg">{resident.name.charAt(0)}</span>
+            </div>
+            <div>
+              <p className="font-bold text-slate-800">{resident.name}</p>
+              <p className="text-xs text-slate-500">{resident.roomNumber}号室</p>
+            </div>
           </div>
-          <div>
-            <p className="font-bold text-gray-900">{resident.name}</p>
-            <p className="text-xs text-gray-500">{resident.roomNumber}号室</p>
+          <div className="flex items-center gap-2">
+            {!hasAnyRecord && (
+              <span className="text-xs text-slate-400 bg-slate-100 px-2 py-1 rounded">未記録</span>
+            )}
+            <svg
+              className={`w-5 h-5 text-slate-400 transition-transform ${expanded ? 'rotate-180' : ''}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          {!hasAnyRecord && (
-            <span className="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded">未記録</span>
-          )}
-          <svg
-            className={`w-5 h-5 text-gray-400 transition-transform ${expanded ? 'rotate-180' : ''}`}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
-        </div>
+
+        {/* Summary (Always Visible) */}
+        {hasAnyRecord && (
+          <div className="px-4 pb-3">
+            <div className="grid grid-cols-4 gap-2 text-center">
+              <div className={`p-2 rounded-lg ${hasVitals ? categoryColors.vital.bg : 'bg-slate-50'}`}>
+                <p className="text-xs text-slate-500">バイタル</p>
+                {latestVital ? (
+                  <p className="text-sm font-medium text-slate-700">
+                    {latestVital.temperature?.toFixed(1)}度
+                  </p>
+                ) : (
+                  <p className="text-sm text-slate-400">-</p>
+                )}
+              </div>
+              <div className={`p-2 rounded-lg ${hasExcretions ? categoryColors.excretion.bg : 'bg-slate-50'}`}>
+                <p className="text-xs text-slate-500">排泄</p>
+                <p className="text-sm font-medium text-slate-700">
+                  {record?.excretions.length || 0}回
+                </p>
+              </div>
+              <div className={`p-2 rounded-lg ${hasMeals ? categoryColors.meal.bg : 'bg-slate-50'}`}>
+                <p className="text-xs text-slate-500">食事</p>
+                <p className="text-sm font-medium text-slate-700">
+                  {record?.meals.length || 0}食
+                </p>
+              </div>
+              <div className={`p-2 rounded-lg ${hasHydrations ? categoryColors.hydration.bg : 'bg-slate-50'}`}>
+                <p className="text-xs text-slate-500">水分</p>
+                <p className="text-sm font-medium text-slate-700">
+                  {totalHydration}ml
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Expanded Details */}
+        {expanded && hasAnyRecord && (
+          <div className="px-4 pb-4 pt-2 border-t border-slate-100 space-y-4">
+            {hasVitals && (
+              <RecordSection title="バイタル" category="vital">
+                {record!.vitals.map((vital) => (
+                  <VitalItem
+                    key={vital.id}
+                    vital={vital}
+                    onEdit={() => setEditingItem({ type: 'vital', item: vital })}
+                    onDelete={() => handleDelete('vital', vital.id)}
+                  />
+                ))}
+              </RecordSection>
+            )}
+
+            {hasMeals && (
+              <RecordSection title="食事" category="meal">
+                {record!.meals.map((meal) => (
+                  <MealItem
+                    key={meal.id}
+                    meal={meal}
+                    onEdit={() => setEditingItem({ type: 'meal', item: meal })}
+                    onDelete={() => handleDelete('meal', meal.id)}
+                  />
+                ))}
+              </RecordSection>
+            )}
+
+            {hasExcretions && (
+              <RecordSection title="排泄" category="excretion">
+                {record!.excretions.map((excretion) => (
+                  <ExcretionItem
+                    key={excretion.id}
+                    excretion={excretion}
+                    onEdit={() => setEditingItem({ type: 'excretion', item: excretion })}
+                    onDelete={() => handleDelete('excretion', excretion.id)}
+                  />
+                ))}
+              </RecordSection>
+            )}
+
+            {hasHydrations && (
+              <RecordSection title="水分" category="hydration">
+                {record!.hydrations.map((hydration) => (
+                  <HydrationItem
+                    key={hydration.id}
+                    hydration={hydration}
+                    onEdit={() => setEditingItem({ type: 'hydration', item: hydration })}
+                    onDelete={() => handleDelete('hydration', hydration.id)}
+                  />
+                ))}
+              </RecordSection>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* Summary (Always Visible) */}
-      {hasAnyRecord && (
-        <div className="px-4 pb-3">
-          <div className="grid grid-cols-4 gap-2 text-center">
-            <div className={`p-2 rounded-lg ${hasVitals ? 'bg-red-50' : 'bg-gray-50'}`}>
-              <p className="text-xs text-gray-500">バイタル</p>
-              {latestVital ? (
-                <p className="text-sm font-medium text-gray-900">
-                  {latestVital.temperature?.toFixed(1)}度
-                </p>
-              ) : (
-                <p className="text-sm text-gray-400">-</p>
-              )}
-            </div>
-            <div className={`p-2 rounded-lg ${hasExcretions ? 'bg-amber-50' : 'bg-gray-50'}`}>
-              <p className="text-xs text-gray-500">排泄</p>
-              <p className="text-sm font-medium text-gray-900">
-                {record?.excretions.length || 0}回
-              </p>
-            </div>
-            <div className={`p-2 rounded-lg ${hasMeals ? 'bg-green-50' : 'bg-gray-50'}`}>
-              <p className="text-xs text-gray-500">食事</p>
-              <p className="text-sm font-medium text-gray-900">
-                {record?.meals.length || 0}食
-              </p>
-            </div>
-            <div className={`p-2 rounded-lg ${hasHydrations ? 'bg-cyan-50' : 'bg-gray-50'}`}>
-              <p className="text-xs text-gray-500">水分</p>
-              <p className="text-sm font-medium text-gray-900">
-                {totalHydration}ml
-              </p>
-            </div>
-          </div>
-        </div>
+      {/* Edit Modal */}
+      {editingItem && (
+        <EditModal
+          type={editingItem.type}
+          item={editingItem.item}
+          record={record!}
+          residentId={resident.id}
+          date={date}
+          onClose={() => setEditingItem(null)}
+          onSaved={() => {
+            setEditingItem(null);
+            onUpdate();
+          }}
+        />
       )}
-
-      {/* Expanded Details */}
-      {expanded && hasAnyRecord && (
-        <div className="px-4 pb-4 pt-2 border-t border-gray-100 space-y-4">
-          {/* Vitals Section */}
-          {hasVitals && (
-            <RecordSection title="バイタル" icon="thermometer" color="red">
-              {record!.vitals.map((vital) => (
-                <VitalItem key={vital.id} vital={vital} />
-              ))}
-            </RecordSection>
-          )}
-
-          {/* Meals Section */}
-          {hasMeals && (
-            <RecordSection title="食事" icon="meal" color="green">
-              {record!.meals.map((meal) => (
-                <MealItem key={meal.id} meal={meal} />
-              ))}
-            </RecordSection>
-          )}
-
-          {/* Excretions Section */}
-          {hasExcretions && (
-            <RecordSection title="排泄" icon="excretion" color="amber">
-              {record!.excretions.map((excretion) => (
-                <ExcretionItem key={excretion.id} excretion={excretion} />
-              ))}
-            </RecordSection>
-          )}
-
-          {/* Hydrations Section */}
-          {hasHydrations && (
-            <RecordSection title="水分" icon="water" color="cyan">
-              {record!.hydrations.map((hydration) => (
-                <HydrationItem key={hydration.id} hydration={hydration} />
-              ))}
-            </RecordSection>
-          )}
-        </div>
-      )}
-    </div>
+    </>
   );
 }
 
 interface RecordSectionProps {
   title: string;
-  icon: string;
-  color: 'red' | 'green' | 'amber' | 'cyan';
+  category: 'vital' | 'meal' | 'excretion' | 'hydration';
   children: React.ReactNode;
 }
 
-function RecordSection({ title, color, children }: RecordSectionProps) {
-  const colorClasses = {
-    red: 'bg-red-100 text-red-700',
-    green: 'bg-green-100 text-green-700',
-    amber: 'bg-amber-100 text-amber-700',
-    cyan: 'bg-cyan-100 text-cyan-700',
-  };
+function RecordSection({ title, category, children }: RecordSectionProps) {
+  const colors = categoryColors[category];
 
   return (
     <div>
-      <h4 className={`inline-block text-xs font-medium px-2 py-1 rounded-full mb-2 ${colorClasses[color]}`}>
+      <h4 className={`inline-block text-xs font-medium px-2 py-1 rounded-full mb-2 ${colors.badge}`}>
         {title}
       </h4>
       <div className="space-y-2 pl-1">{children}</div>
@@ -315,44 +377,57 @@ function RecordSection({ title, color, children }: RecordSectionProps) {
   );
 }
 
-function VitalItem({ vital }: { vital: Vital }) {
+interface ItemProps {
+  onEdit: () => void;
+  onDelete: () => void;
+}
+
+function VitalItem({ vital, onEdit, onDelete }: { vital: Vital } & ItemProps) {
   return (
-    <div className="bg-gray-50 rounded-lg p-2 text-sm">
+    <div className="bg-slate-50 rounded-lg p-2 text-sm">
       <div className="flex items-center justify-between mb-1">
-        <span className="text-gray-500 text-xs">{vital.time}</span>
+        <span className="text-slate-500 text-xs">{vital.time}</span>
+        <div className="flex gap-1">
+          <button onClick={onEdit} className="text-slate-500 text-xs px-2 py-1 hover:bg-slate-200 rounded">
+            編集
+          </button>
+          <button onClick={onDelete} className="text-red-400 text-xs px-2 py-1 hover:bg-red-50 rounded">
+            削除
+          </button>
+        </div>
       </div>
       <div className="grid grid-cols-5 gap-1 text-center">
         {vital.temperature && (
           <div>
-            <p className="text-xs text-gray-400">体温</p>
-            <p className="font-medium">{vital.temperature.toFixed(1)}</p>
+            <p className="text-xs text-slate-400">体温</p>
+            <p className="font-medium text-slate-700">{vital.temperature.toFixed(1)}</p>
           </div>
         )}
         {vital.bloodPressureHigh && (
           <div>
-            <p className="text-xs text-gray-400">血圧</p>
-            <p className="font-medium">{vital.bloodPressureHigh}/{vital.bloodPressureLow}</p>
+            <p className="text-xs text-slate-400">血圧</p>
+            <p className="font-medium text-slate-700">{vital.bloodPressureHigh}/{vital.bloodPressureLow}</p>
           </div>
         )}
         {vital.pulse && (
           <div>
-            <p className="text-xs text-gray-400">脈拍</p>
-            <p className="font-medium">{vital.pulse}</p>
+            <p className="text-xs text-slate-400">脈拍</p>
+            <p className="font-medium text-slate-700">{vital.pulse}</p>
           </div>
         )}
         {vital.spO2 && (
           <div>
-            <p className="text-xs text-gray-400">SpO2</p>
-            <p className="font-medium">{vital.spO2}%</p>
+            <p className="text-xs text-slate-400">SpO2</p>
+            <p className="font-medium text-slate-700">{vital.spO2}%</p>
           </div>
         )}
       </div>
-      {vital.note && <p className="text-xs text-gray-500 mt-1">{vital.note}</p>}
+      {vital.note && <p className="text-xs text-slate-500 mt-1">{vital.note}</p>}
     </div>
   );
 }
 
-function MealItem({ meal }: { meal: Meal }) {
+function MealItem({ meal, onEdit, onDelete }: { meal: Meal } & ItemProps) {
   const mealTypeLabels: Record<string, string> = {
     breakfast: '朝食',
     lunch: '昼食',
@@ -361,32 +436,40 @@ function MealItem({ meal }: { meal: Meal }) {
   };
 
   return (
-    <div className="bg-gray-50 rounded-lg p-2 text-sm">
+    <div className="bg-slate-50 rounded-lg p-2 text-sm">
       <div className="flex items-center justify-between mb-1">
-        <span className="font-medium text-gray-700">{mealTypeLabels[meal.mealType]}</span>
+        <span className="font-medium text-slate-700">{mealTypeLabels[meal.mealType]}</span>
+        <div className="flex gap-1">
+          <button onClick={onEdit} className="text-slate-500 text-xs px-2 py-1 hover:bg-slate-200 rounded">
+            編集
+          </button>
+          <button onClick={onDelete} className="text-red-400 text-xs px-2 py-1 hover:bg-red-50 rounded">
+            削除
+          </button>
+        </div>
       </div>
       <div className="grid grid-cols-3 gap-2 text-center">
         <div>
-          <p className="text-xs text-gray-400">主食</p>
-          <p className="font-medium">{meal.mainDishAmount}%</p>
+          <p className="text-xs text-slate-400">主食</p>
+          <p className="font-medium text-slate-700">{meal.mainDishAmount}%</p>
         </div>
         <div>
-          <p className="text-xs text-gray-400">副食</p>
-          <p className="font-medium">{meal.sideDishAmount}%</p>
+          <p className="text-xs text-slate-400">副食</p>
+          <p className="font-medium text-slate-700">{meal.sideDishAmount}%</p>
         </div>
         {meal.soupAmount !== undefined && (
           <div>
-            <p className="text-xs text-gray-400">汁物</p>
-            <p className="font-medium">{meal.soupAmount}%</p>
+            <p className="text-xs text-slate-400">汁物</p>
+            <p className="font-medium text-slate-700">{meal.soupAmount}%</p>
           </div>
         )}
       </div>
-      {meal.note && <p className="text-xs text-gray-500 mt-1">{meal.note}</p>}
+      {meal.note && <p className="text-xs text-slate-500 mt-1">{meal.note}</p>}
     </div>
   );
 }
 
-function ExcretionItem({ excretion }: { excretion: Excretion }) {
+function ExcretionItem({ excretion, onEdit, onDelete }: { excretion: Excretion } & ItemProps) {
   const typeLabels: Record<string, string> = {
     urine: '尿',
     feces: '便',
@@ -400,37 +483,351 @@ function ExcretionItem({ excretion }: { excretion: Excretion }) {
   };
 
   return (
-    <div className="bg-gray-50 rounded-lg p-2 text-sm">
+    <div className="bg-slate-50 rounded-lg p-2 text-sm">
       <div className="flex items-center justify-between">
-        <span className="text-gray-500 text-xs">{excretion.time}</span>
-        <span className="font-medium text-gray-700">{typeLabels[excretion.type]}</span>
+        <span className="text-slate-500 text-xs">{excretion.time}</span>
+        <div className="flex items-center gap-2">
+          <span className="font-medium text-slate-700">{typeLabels[excretion.type]}</span>
+          <button onClick={onEdit} className="text-slate-500 text-xs px-2 py-1 hover:bg-slate-200 rounded">
+            編集
+          </button>
+          <button onClick={onDelete} className="text-red-400 text-xs px-2 py-1 hover:bg-red-50 rounded">
+            削除
+          </button>
+        </div>
       </div>
       <div className="flex gap-4 mt-1">
         {excretion.urineAmount && (
-          <span className="text-xs">尿量: {amountLabels[excretion.urineAmount]}</span>
+          <span className="text-xs text-slate-600">尿量: {amountLabels[excretion.urineAmount]}</span>
         )}
         {excretion.fecesAmount && (
-          <span className="text-xs">便量: {amountLabels[excretion.fecesAmount]}</span>
+          <span className="text-xs text-slate-600">便量: {amountLabels[excretion.fecesAmount]}</span>
         )}
         {excretion.hasIncontinence && (
-          <span className="text-xs text-orange-600">失禁あり</span>
+          <span className="text-xs text-orange-500">失禁あり</span>
         )}
       </div>
-      {excretion.note && <p className="text-xs text-gray-500 mt-1">{excretion.note}</p>}
+      {excretion.note && <p className="text-xs text-slate-500 mt-1">{excretion.note}</p>}
     </div>
   );
 }
 
-function HydrationItem({ hydration }: { hydration: Hydration }) {
+function HydrationItem({ hydration, onEdit, onDelete }: { hydration: Hydration } & ItemProps) {
   return (
-    <div className="bg-gray-50 rounded-lg p-2 text-sm flex items-center justify-between">
+    <div className="bg-slate-50 rounded-lg p-2 text-sm flex items-center justify-between">
       <div className="flex items-center gap-2">
-        <span className="text-gray-500 text-xs">{hydration.time}</span>
+        <span className="text-slate-500 text-xs">{hydration.time}</span>
         {hydration.drinkType && (
-          <span className="text-gray-700">{hydration.drinkType}</span>
+          <span className="text-slate-700">{hydration.drinkType}</span>
         )}
+        <span className="font-medium text-slate-800">{hydration.amount}ml</span>
       </div>
-      <span className="font-medium text-gray-900">{hydration.amount}ml</span>
+      <div className="flex gap-1">
+        <button onClick={onEdit} className="text-slate-500 text-xs px-2 py-1 hover:bg-slate-200 rounded">
+          編集
+        </button>
+        <button onClick={onDelete} className="text-red-400 text-xs px-2 py-1 hover:bg-red-50 rounded">
+          削除
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ========================================
+// Edit Modal
+// ========================================
+interface EditModalProps {
+  type: 'vital' | 'meal' | 'excretion' | 'hydration';
+  item: Vital | Meal | Excretion | Hydration;
+  record: DailyRecord;
+  residentId: string;
+  date: string;
+  onClose: () => void;
+  onSaved: () => void;
+}
+
+function EditModal({ type, item, record, residentId, date, onClose, onSaved }: EditModalProps) {
+  const [saving, setSaving] = useState(false);
+
+  const [temp, setTemp] = useState((item as Vital).temperature?.toString() || '36.5');
+  const [bpH, setBpH] = useState((item as Vital).bloodPressureHigh?.toString() || '120');
+  const [bpL, setBpL] = useState((item as Vital).bloodPressureLow?.toString() || '70');
+  const [pulse, setPulse] = useState((item as Vital).pulse?.toString() || '70');
+  const [spo2, setSpo2] = useState((item as Vital).spO2?.toString() || '98');
+
+  const [mainDish, setMainDish] = useState((item as Meal).mainDishAmount || 100);
+  const [sideDish, setSideDish] = useState((item as Meal).sideDishAmount || 100);
+  const [soup, setSoup] = useState((item as Meal).soupAmount || 100);
+
+  const [excType, setExcType] = useState((item as Excretion).type || 'urine');
+  const [excAmount, setExcAmount] = useState((item as Excretion).urineAmount || (item as Excretion).fecesAmount || 'medium');
+
+  const [hydAmount, setHydAmount] = useState((item as Hydration).amount || 150);
+  const [hydType, setHydType] = useState((item as Hydration).drinkType || 'お茶');
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const updateData: Partial<DailyRecord> = {};
+
+      if (type === 'vital') {
+        updateData.vitals = record.vitals.map((v) =>
+          v.id === item.id
+            ? {
+                ...v,
+                temperature: parseFloat(temp),
+                bloodPressureHigh: parseInt(bpH),
+                bloodPressureLow: parseInt(bpL),
+                pulse: parseInt(pulse),
+                spO2: parseInt(spo2),
+              }
+            : v
+        );
+      } else if (type === 'meal') {
+        updateData.meals = record.meals.map((m) =>
+          m.id === item.id
+            ? { ...m, mainDishAmount: mainDish, sideDishAmount: sideDish, soupAmount: soup }
+            : m
+        );
+      } else if (type === 'excretion') {
+        updateData.excretions = record.excretions.map((e) =>
+          e.id === item.id
+            ? {
+                ...e,
+                type: excType as 'urine' | 'feces' | 'both',
+                urineAmount: excType !== 'feces' ? excAmount as 'small' | 'medium' | 'large' : undefined,
+                fecesAmount: excType !== 'urine' ? excAmount as 'small' | 'medium' | 'large' : undefined,
+              }
+            : e
+        );
+      } else if (type === 'hydration') {
+        updateData.hydrations = record.hydrations.map((h) =>
+          h.id === item.id
+            ? { ...h, amount: hydAmount, drinkType: hydType }
+            : h
+        );
+      }
+
+      await saveDailyRecord(residentId, date, updateData);
+      onSaved();
+    } catch (error) {
+      console.error('Save failed:', error);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const titles = {
+    vital: 'バイタル編集',
+    meal: '食事編集',
+    excretion: '排泄編集',
+    hydration: '水分編集',
+  };
+
+  const amounts = [0, 50, 70, 100];
+
+  return (
+    <div className="fixed inset-0 bg-black/40 z-50 flex items-end justify-center" onClick={onClose}>
+      <div
+        className="bg-white w-full max-w-lg rounded-t-2xl p-4 animate-slide-up"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-bold text-slate-800">{titles[type]}</h3>
+          <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full">
+            <svg className="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        {type === 'vital' && (
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs text-slate-500">体温</label>
+              <input
+                type="number"
+                step="0.1"
+                value={temp}
+                onChange={(e) => setTemp(e.target.value)}
+                className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:border-slate-400 outline-none"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-slate-500">血圧(上)</label>
+              <input
+                type="number"
+                value={bpH}
+                onChange={(e) => setBpH(e.target.value)}
+                className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:border-slate-400 outline-none"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-slate-500">血圧(下)</label>
+              <input
+                type="number"
+                value={bpL}
+                onChange={(e) => setBpL(e.target.value)}
+                className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:border-slate-400 outline-none"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-slate-500">脈拍</label>
+              <input
+                type="number"
+                value={pulse}
+                onChange={(e) => setPulse(e.target.value)}
+                className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:border-slate-400 outline-none"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-slate-500">SpO2</label>
+              <input
+                type="number"
+                value={spo2}
+                onChange={(e) => setSpo2(e.target.value)}
+                className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:border-slate-400 outline-none"
+              />
+            </div>
+          </div>
+        )}
+
+        {type === 'meal' && (
+          <div className="space-y-3">
+            <div>
+              <label className="text-xs text-slate-500 block mb-1">主食</label>
+              <div className="flex gap-2">
+                {amounts.map((v) => (
+                  <button
+                    key={v}
+                    onClick={() => setMainDish(v)}
+                    className={`flex-1 py-2 rounded-lg text-sm ${
+                      mainDish === v ? 'bg-[#86d4a8] text-white' : 'bg-slate-100'
+                    }`}
+                  >
+                    {v === 0 ? '×' : v === 100 ? '全量' : `${v}%`}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label className="text-xs text-slate-500 block mb-1">副食</label>
+              <div className="flex gap-2">
+                {amounts.map((v) => (
+                  <button
+                    key={v}
+                    onClick={() => setSideDish(v)}
+                    className={`flex-1 py-2 rounded-lg text-sm ${
+                      sideDish === v ? 'bg-[#86d4a8] text-white' : 'bg-slate-100'
+                    }`}
+                  >
+                    {v === 0 ? '×' : v === 100 ? '全量' : `${v}%`}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label className="text-xs text-slate-500 block mb-1">汁物</label>
+              <div className="flex gap-2">
+                {amounts.map((v) => (
+                  <button
+                    key={v}
+                    onClick={() => setSoup(v)}
+                    className={`flex-1 py-2 rounded-lg text-sm ${
+                      soup === v ? 'bg-[#86d4a8] text-white' : 'bg-slate-100'
+                    }`}
+                  >
+                    {v === 0 ? '×' : v === 100 ? '全量' : `${v}%`}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {type === 'excretion' && (
+          <div className="space-y-3">
+            <div>
+              <label className="text-xs text-slate-500 block mb-1">種類</label>
+              <div className="flex gap-2">
+                {(['urine', 'feces', 'both'] as const).map((t) => (
+                  <button
+                    key={t}
+                    onClick={() => setExcType(t)}
+                    className={`flex-1 py-2 rounded-lg text-sm ${
+                      excType === t ? 'bg-[#f5c97a] text-white' : 'bg-slate-100'
+                    }`}
+                  >
+                    {t === 'urine' ? '尿' : t === 'feces' ? '便' : '両方'}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label className="text-xs text-slate-500 block mb-1">量</label>
+              <div className="flex gap-2">
+                {(['small', 'medium', 'large'] as const).map((a) => (
+                  <button
+                    key={a}
+                    onClick={() => setExcAmount(a)}
+                    className={`flex-1 py-2 rounded-lg text-sm ${
+                      excAmount === a ? 'bg-[#f5c97a] text-white' : 'bg-slate-100'
+                    }`}
+                  >
+                    {a === 'small' ? '少' : a === 'medium' ? '中' : '多'}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {type === 'hydration' && (
+          <div className="space-y-3">
+            <div>
+              <label className="text-xs text-slate-500 block mb-1">飲み物</label>
+              <div className="flex gap-2">
+                {['お茶', '水', 'コーヒー', 'ジュース'].map((t) => (
+                  <button
+                    key={t}
+                    onClick={() => setHydType(t)}
+                    className={`flex-1 py-2 rounded-lg text-sm ${
+                      hydType === t ? 'bg-[#7ec8e8] text-white' : 'bg-slate-100'
+                    }`}
+                  >
+                    {t}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label className="text-xs text-slate-500 block mb-1">量(ml)</label>
+              <div className="flex gap-2">
+                {[100, 150, 200, 250].map((a) => (
+                  <button
+                    key={a}
+                    onClick={() => setHydAmount(a)}
+                    className={`flex-1 py-2 rounded-lg text-sm ${
+                      hydAmount === a ? 'bg-[#7ec8e8] text-white' : 'bg-slate-100'
+                    }`}
+                  >
+                    {a}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="w-full mt-4 py-3 bg-slate-700 text-white font-bold rounded-xl disabled:opacity-50 hover:bg-slate-800 transition-colors"
+        >
+          {saving ? '保存中...' : '保存'}
+        </button>
+      </div>
     </div>
   );
 }

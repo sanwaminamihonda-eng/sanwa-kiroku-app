@@ -26,7 +26,6 @@ export default function ResidentsListPage() {
     loadResidents();
   }, []);
 
-  // Filter residents by name or room number
   const filteredResidents = useMemo(() => {
     if (!searchQuery.trim()) return residents;
 
@@ -39,16 +38,15 @@ export default function ResidentsListPage() {
     });
   }, [residents, searchQuery]);
 
-  // Care level display
   const careLevelLabel = (level: number) => `要介護${level}`;
 
   return (
-    <div className="min-h-screen bg-gray-100 pb-20">
+    <div className="min-h-screen bg-slate-50 pb-20">
       {/* Header */}
       <header className="bg-white shadow-sm sticky top-0 z-40">
         <div className="px-4 py-3">
-          <h1 className="text-lg font-bold text-gray-900">利用者一覧</h1>
-          <p className="text-sm text-gray-500">{residents.length}名登録</p>
+          <h1 className="text-lg font-bold text-slate-800">利用者一覧</h1>
+          <p className="text-sm text-slate-500">{residents.length}名登録</p>
         </div>
 
         {/* Search Input */}
@@ -56,7 +54,7 @@ export default function ResidentsListPage() {
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <svg
-                className="h-5 w-5 text-gray-400"
+                className="h-5 w-5 text-slate-400"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -74,7 +72,7 @@ export default function ResidentsListPage() {
               placeholder="氏名・居室番号で検索"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-slate-300 focus:border-transparent bg-white"
             />
             {searchQuery && (
               <button
@@ -82,7 +80,7 @@ export default function ResidentsListPage() {
                 className="absolute inset-y-0 right-0 pr-3 flex items-center"
               >
                 <svg
-                  className="h-5 w-5 text-gray-400 hover:text-gray-600"
+                  className="h-5 w-5 text-slate-400 hover:text-slate-600"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -104,10 +102,10 @@ export default function ResidentsListPage() {
       <main className="p-2">
         {loading ? (
           <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-500" />
+            <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-slate-400" />
           </div>
         ) : filteredResidents.length === 0 ? (
-          <div className="bg-white rounded-xl p-8 text-center text-gray-500 shadow-sm">
+          <div className="bg-white rounded-xl p-8 text-center text-slate-500 shadow-sm border border-slate-100">
             {searchQuery ? (
               <p>「{searchQuery}」に一致する利用者がいません</p>
             ) : (
@@ -122,11 +120,11 @@ export default function ResidentsListPage() {
                 href={`/residents/${resident.id}`}
                 className="block"
               >
-                <div className="bg-white rounded-xl p-4 shadow-sm active:bg-gray-50 transition-colors">
+                <div className="bg-white rounded-xl p-4 shadow-sm active:bg-slate-50 transition-colors border border-slate-100">
                   <div className="flex items-start gap-3">
                     {/* Avatar */}
-                    <div className="flex-shrink-0 w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                      <span className="text-blue-600 font-bold text-lg">
+                    <div className="flex-shrink-0 w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center">
+                      <span className="text-slate-600 font-bold text-lg">
                         {resident.name.charAt(0)}
                       </span>
                     </div>
@@ -134,23 +132,23 @@ export default function ResidentsListPage() {
                     {/* Info */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="font-bold text-gray-900 text-base">
+                        <span className="font-bold text-slate-800 text-base">
                           {resident.name}
                         </span>
-                        <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
+                        <span className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
                           {resident.roomNumber}号室
                         </span>
                       </div>
 
-                      <div className="flex items-center gap-3 text-sm text-gray-600">
+                      <div className="flex items-center gap-3 text-sm text-slate-600">
                         <span>{calculateAge(resident.birthDate)}歳</span>
-                        <span className="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded">
+                        <span className="text-xs bg-[#fef6e6] text-[#c9a44a] px-2 py-0.5 rounded font-medium">
                           {careLevelLabel(resident.careLevel)}
                         </span>
                       </div>
 
                       {resident.notes && (
-                        <p className="mt-2 text-sm text-gray-500 line-clamp-2">
+                        <p className="mt-2 text-sm text-slate-500 line-clamp-2">
                           {resident.notes}
                         </p>
                       )}
@@ -159,7 +157,7 @@ export default function ResidentsListPage() {
                     {/* Arrow indicator */}
                     <div className="flex-shrink-0 self-center">
                       <svg
-                        className="w-5 h-5 text-gray-400"
+                        className="w-5 h-5 text-slate-300"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
