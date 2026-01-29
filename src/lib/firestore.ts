@@ -108,16 +108,37 @@ export async function getDailyRecord(residentId: string, date: string): Promise<
   } as DailyRecord;
 }
 
+// 配列内のDateをTimestampに変換
+function convertDatesToTimestamps<T>(arr: T[]): T[] {
+  return arr.map((item) => {
+    if (typeof item !== 'object' || item === null) return item;
+    const converted = { ...item } as Record<string, unknown>;
+    for (const key in converted) {
+      if (converted[key] instanceof Date) {
+        converted[key] = Timestamp.fromDate(converted[key] as Date);
+      }
+    }
+    return converted as T;
+  });
+}
+
 export async function saveDailyRecord(residentId: string, date: string, data: Partial<DailyRecord>): Promise<void> {
   const db = getFirebaseDb();
   const colName = getCollectionName('records');
   const docRef = doc(db, colName, residentId, 'daily', date);
   const now = new Date();
 
+  // 配列内のDateをTimestampに変換
+  const convertedData: Partial<DailyRecord> = { ...data };
+  if (data.vitals) convertedData.vitals = convertDatesToTimestamps(data.vitals);
+  if (data.meals) convertedData.meals = convertDatesToTimestamps(data.meals);
+  if (data.excretions) convertedData.excretions = convertDatesToTimestamps(data.excretions);
+  if (data.hydrations) convertedData.hydrations = convertDatesToTimestamps(data.hydrations);
+
   const existingDoc = await getDoc(docRef);
   if (existingDoc.exists()) {
     await updateDoc(docRef, {
-      ...data,
+      ...convertedData,
       updatedAt: Timestamp.fromDate(now),
     });
   } else {
@@ -128,7 +149,7 @@ export async function saveDailyRecord(residentId: string, date: string, data: Pa
       excretions: [],
       meals: [],
       hydrations: [],
-      ...data,
+      ...convertedData,
       createdAt: Timestamp.fromDate(now),
       updatedAt: Timestamp.fromDate(now),
     });
