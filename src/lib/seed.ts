@@ -3,6 +3,13 @@ import { getFirebaseDb } from './firebase';
 import { SEED_RESIDENTS, generateSeedRecords, getRecentDates } from './seed-data';
 import { isDemo } from './env';
 
+// undefined値を除去するヘルパー
+function removeUndefined<T extends Record<string, unknown>>(obj: T): T {
+  return Object.fromEntries(
+    Object.entries(obj).filter(([, v]) => v !== undefined)
+  ) as T;
+}
+
 /**
  * Seedデータを投入
  */
@@ -14,7 +21,7 @@ export async function seedData(): Promise<{ residentsCount: number; recordsCount
   const db = getFirebaseDb();
   const residentsCol = collection(db, 'demo_residents');
   const recordsCol = 'demo_records';
-  const dates = getRecentDates(3);
+  const dates = getRecentDates(); // デフォルト7日分
 
   let residentsCount = 0;
   let recordsCount = 0;
@@ -36,20 +43,21 @@ export async function seedData(): Promise<{ residentsCount: number; recordsCount
     for (const record of records) {
       const recordDocRef = doc(db, recordsCol, docRef.id, 'daily', record.date);
       await setDoc(recordDocRef, {
-        ...record,
-        vitals: record.vitals.map((v) => ({
+        residentId: record.residentId,
+        date: record.date,
+        vitals: record.vitals.map((v) => removeUndefined({
           ...v,
           recordedAt: Timestamp.fromDate(v.recordedAt),
         })),
-        excretions: record.excretions.map((e) => ({
+        excretions: record.excretions.map((e) => removeUndefined({
           ...e,
           recordedAt: Timestamp.fromDate(e.recordedAt),
         })),
-        meals: record.meals.map((m) => ({
+        meals: record.meals.map((m) => removeUndefined({
           ...m,
           recordedAt: Timestamp.fromDate(m.recordedAt),
         })),
-        hydrations: record.hydrations.map((h) => ({
+        hydrations: record.hydrations.map((h) => removeUndefined({
           ...h,
           recordedAt: Timestamp.fromDate(h.recordedAt),
         })),
