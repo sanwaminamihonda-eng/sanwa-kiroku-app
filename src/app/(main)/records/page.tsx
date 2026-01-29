@@ -266,30 +266,14 @@ interface InputListProps {
   onRecordSaved?: (residentId: string) => void;
 }
 
-function ResidentHeader({ resident, recorded }: { resident: Resident; recorded: boolean }) {
-  return (
-    <div className="flex items-center justify-between mb-2">
-      <div className="flex items-center gap-2">
-        <span className="font-bold text-slate-800">{resident.name}</span>
-        <span className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
-          {resident.roomNumber}
-        </span>
-        {recorded && (
-          <span className="text-emerald-600 text-xs font-medium bg-emerald-50 px-1.5 py-0.5 rounded">
-            ✓済
-          </span>
-        )}
-      </div>
-    </div>
-  );
-}
-
 // ========================================
-// バイタル一覧入力
+// バイタル一覧入力（折りたたみ式）
 // ========================================
 function VitalInputList({ residents, records, today, savingId, setSavingId, onSaved, onRecordSaved }: InputListProps) {
-  const [inputs, setInputs] = useState<Record<string, { temp: string; bpH: string; bpL: string; pulse: string; spo2: string }>>({});
   const style = categoryStyles.vital;
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [successId, setSuccessId] = useState<string | null>(null);
+  const [inputs, setInputs] = useState<Record<string, { temp: string; bpH: string; bpL: string; pulse: string; spo2: string }>>({});
 
   const getInput = (id: string) => inputs[id] || { temp: '36.5', bpH: '120', bpL: '70', pulse: '70', spo2: '98' };
 
@@ -324,6 +308,10 @@ function VitalInputList({ residents, records, today, savingId, setSavingId, onSa
       });
       onSaved();
       onRecordSaved?.(resident.id);
+
+      setExpandedId(null);
+      setSuccessId(resident.id);
+      setTimeout(() => setSuccessId(null), 2000);
     } catch (error) {
       console.error('Save failed:', error);
     } finally {
@@ -331,80 +319,111 @@ function VitalInputList({ residents, records, today, savingId, setSavingId, onSa
     }
   };
 
-  const hasRecord = (id: string) => (records[id]?.vitals?.length ?? 0) > 0;
-
   return (
     <div className="space-y-2">
       {residents.map((resident) => {
         const input = getInput(resident.id);
-        const recorded = hasRecord(resident.id);
         const isSaving = savingId === resident.id;
+        const isExpanded = expandedId === resident.id;
+        const isSuccess = successId === resident.id;
 
         return (
           <div
             key={resident.id}
-            className={`bg-white rounded-xl p-3 shadow-sm border ${
-              recorded ? 'border-l-4 border-l-emerald-400 border-t-slate-100 border-r-slate-100 border-b-slate-100' : 'border-slate-100'
-            }`}
+            className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden"
           >
-            <ResidentHeader resident={resident} recorded={recorded} />
+            <div className="p-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-slate-800">{resident.name}</span>
+                  <span className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
+                    {resident.roomNumber}
+                  </span>
+                </div>
 
-            <div className="grid grid-cols-5 gap-2">
-              <div>
-                <label className="text-xs text-slate-500">体温</label>
-                <input
-                  type="number"
-                  step="0.1"
-                  value={input.temp}
-                  onChange={(e) => updateInput(resident.id, 'temp', e.target.value)}
-                  className="w-full px-2 py-2 border border-slate-200 rounded-lg text-center text-sm font-medium focus:border-slate-400 focus:ring-1 focus:ring-slate-200 outline-none"
-                />
-              </div>
-              <div>
-                <label className="text-xs text-slate-500">血圧↑</label>
-                <input
-                  type="number"
-                  value={input.bpH}
-                  onChange={(e) => updateInput(resident.id, 'bpH', e.target.value)}
-                  className="w-full px-2 py-2 border border-slate-200 rounded-lg text-center text-sm font-medium focus:border-slate-400 focus:ring-1 focus:ring-slate-200 outline-none"
-                />
-              </div>
-              <div>
-                <label className="text-xs text-slate-500">血圧↓</label>
-                <input
-                  type="number"
-                  value={input.bpL}
-                  onChange={(e) => updateInput(resident.id, 'bpL', e.target.value)}
-                  className="w-full px-2 py-2 border border-slate-200 rounded-lg text-center text-sm font-medium focus:border-slate-400 focus:ring-1 focus:ring-slate-200 outline-none"
-                />
-              </div>
-              <div>
-                <label className="text-xs text-slate-500">脈拍</label>
-                <input
-                  type="number"
-                  value={input.pulse}
-                  onChange={(e) => updateInput(resident.id, 'pulse', e.target.value)}
-                  className="w-full px-2 py-2 border border-slate-200 rounded-lg text-center text-sm font-medium focus:border-slate-400 focus:ring-1 focus:ring-slate-200 outline-none"
-                />
-              </div>
-              <div>
-                <label className="text-xs text-slate-500">SpO2</label>
-                <input
-                  type="number"
-                  value={input.spo2}
-                  onChange={(e) => updateInput(resident.id, 'spo2', e.target.value)}
-                  className="w-full px-2 py-2 border border-slate-200 rounded-lg text-center text-sm font-medium focus:border-slate-400 focus:ring-1 focus:ring-slate-200 outline-none"
-                />
+                {isSuccess ? (
+                  <span className="text-emerald-600 text-sm font-medium">✓ 追加しました</span>
+                ) : !isExpanded ? (
+                  <button
+                    onClick={() => setExpandedId(resident.id)}
+                    className={`px-4 py-2 text-white text-sm font-medium rounded-lg transition-colors ${style.button}`}
+                  >
+                    ＋ 追加
+                  </button>
+                ) : null}
               </div>
             </div>
 
-            <button
-              onClick={() => handleSave(resident)}
-              disabled={isSaving}
-              className={`mt-2 w-full py-2.5 text-white text-sm font-medium rounded-lg disabled:opacity-50 transition-colors ${style.button}`}
-            >
-              {isSaving ? '保存中...' : '保存'}
-            </button>
+            {isExpanded && (
+              <div className="px-3 pb-3 border-t border-slate-100 pt-3 bg-slate-50">
+                <p className="text-xs text-slate-500 mb-3">── バイタルを追加 ──</p>
+
+                <div className="grid grid-cols-5 gap-2 mb-4">
+                  <div>
+                    <label className="text-xs text-slate-600 block mb-1">体温</label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      value={input.temp}
+                      onChange={(e) => updateInput(resident.id, 'temp', e.target.value)}
+                      className="w-full px-2 py-2.5 border border-slate-200 rounded-lg text-center text-sm font-medium focus:border-[#c96567] focus:ring-1 focus:ring-[#c96567] outline-none bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-600 block mb-1">血圧↑</label>
+                    <input
+                      type="number"
+                      value={input.bpH}
+                      onChange={(e) => updateInput(resident.id, 'bpH', e.target.value)}
+                      className="w-full px-2 py-2.5 border border-slate-200 rounded-lg text-center text-sm font-medium focus:border-[#c96567] focus:ring-1 focus:ring-[#c96567] outline-none bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-600 block mb-1">血圧↓</label>
+                    <input
+                      type="number"
+                      value={input.bpL}
+                      onChange={(e) => updateInput(resident.id, 'bpL', e.target.value)}
+                      className="w-full px-2 py-2.5 border border-slate-200 rounded-lg text-center text-sm font-medium focus:border-[#c96567] focus:ring-1 focus:ring-[#c96567] outline-none bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-600 block mb-1">脈拍</label>
+                    <input
+                      type="number"
+                      value={input.pulse}
+                      onChange={(e) => updateInput(resident.id, 'pulse', e.target.value)}
+                      className="w-full px-2 py-2.5 border border-slate-200 rounded-lg text-center text-sm font-medium focus:border-[#c96567] focus:ring-1 focus:ring-[#c96567] outline-none bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-600 block mb-1">SpO2</label>
+                    <input
+                      type="number"
+                      value={input.spo2}
+                      onChange={(e) => updateInput(resident.id, 'spo2', e.target.value)}
+                      className="w-full px-2 py-2.5 border border-slate-200 rounded-lg text-center text-sm font-medium focus:border-[#c96567] focus:ring-1 focus:ring-[#c96567] outline-none bg-white"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setExpandedId(null)}
+                    className="flex-1 py-2.5 text-slate-600 text-sm font-medium rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition-colors"
+                  >
+                    キャンセル
+                  </button>
+                  <button
+                    onClick={() => handleSave(resident)}
+                    disabled={isSaving}
+                    className={`flex-1 py-2.5 text-white text-sm font-medium rounded-lg disabled:opacity-50 transition-colors ${style.button}`}
+                  >
+                    {isSaving ? '追加中...' : '✓ この記録を追加'}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         );
       })}
@@ -413,17 +432,18 @@ function VitalInputList({ residents, records, today, savingId, setSavingId, onSa
 }
 
 // ========================================
-// 食事一覧入力
+// 食事一覧入力（折りたたみ式）
 // ========================================
 function MealInputList({ residents, records, today, savingId, setSavingId, onSaved, onRecordSaved }: InputListProps) {
   const style = categoryStyles.meal;
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [successId, setSuccessId] = useState<string | null>(null);
   const [mealType, setMealType] = useState<'breakfast' | 'lunch' | 'dinner'>(() => {
     const hour = new Date().getHours();
     if (hour < 10) return 'breakfast';
     if (hour < 15) return 'lunch';
     return 'dinner';
   });
-
   const [inputs, setInputs] = useState<Record<string, { main: number; side: number; soup: number }>>({});
 
   const getInput = (id: string) => inputs[id] || { main: 100, side: 100, soup: 100 };
@@ -457,6 +477,10 @@ function MealInputList({ residents, records, today, savingId, setSavingId, onSav
       });
       onSaved();
       onRecordSaved?.(resident.id);
+
+      setExpandedId(null);
+      setSuccessId(resident.id);
+      setTimeout(() => setSuccessId(null), 2000);
     } catch (error) {
       console.error('Save failed:', error);
     } finally {
@@ -464,7 +488,6 @@ function MealInputList({ residents, records, today, savingId, setSavingId, onSav
     }
   };
 
-  const hasRecord = (id: string) => (records[id]?.meals?.length ?? 0) > 0;
   const mealLabels = { breakfast: '朝食', lunch: '昼食', dinner: '夕食' };
   const amounts = [0, 50, 70, 100];
 
@@ -472,6 +495,7 @@ function MealInputList({ residents, records, today, savingId, setSavingId, onSav
     <div>
       {/* 食事タイプ選択 */}
       <div className="bg-white rounded-xl p-3 shadow-sm mb-2 border border-slate-100">
+        <p className="text-xs text-slate-500 mb-2">記録する食事</p>
         <div className="grid grid-cols-3 gap-2">
           {(['breakfast', 'lunch', 'dinner'] as const).map((type) => (
             <button
@@ -490,48 +514,81 @@ function MealInputList({ residents, records, today, savingId, setSavingId, onSav
       <div className="space-y-2">
         {residents.map((resident) => {
           const input = getInput(resident.id);
-          const recorded = hasRecord(resident.id);
           const isSaving = savingId === resident.id;
+          const isExpanded = expandedId === resident.id;
+          const isSuccess = successId === resident.id;
 
           return (
             <div
               key={resident.id}
-              className={`bg-white rounded-xl p-3 shadow-sm border ${
-                recorded ? 'border-l-4 border-l-emerald-400 border-t-slate-100 border-r-slate-100 border-b-slate-100' : 'border-slate-100'
-              }`}
+              className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden"
             >
-              <ResidentHeader resident={resident} recorded={recorded} />
-
-              <div className="grid grid-cols-3 gap-3 mb-2">
-                {(['main', 'side', 'soup'] as const).map((field) => (
-                  <div key={field}>
-                    <label className="text-xs text-slate-500 block mb-1">
-                      {field === 'main' ? '主食' : field === 'side' ? '副食' : '汁物'}
-                    </label>
-                    <div className="flex gap-1">
-                      {amounts.map((v) => (
-                        <button
-                          key={v}
-                          onClick={() => updateInput(resident.id, field, v)}
-                          className={`flex-1 py-1.5 text-xs rounded-md font-medium transition-colors ${
-                            input[field] === v ? style.selected : 'bg-slate-100 hover:bg-slate-200'
-                          }`}
-                        >
-                          {v === 0 ? '×' : v === 100 ? '全' : v}
-                        </button>
-                      ))}
-                    </div>
+              <div className="p-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-slate-800">{resident.name}</span>
+                    <span className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
+                      {resident.roomNumber}
+                    </span>
                   </div>
-                ))}
+
+                  {isSuccess ? (
+                    <span className="text-emerald-600 text-sm font-medium">✓ 追加しました</span>
+                  ) : !isExpanded ? (
+                    <button
+                      onClick={() => setExpandedId(resident.id)}
+                      className={`px-4 py-2 text-white text-sm font-medium rounded-lg transition-colors ${style.button}`}
+                    >
+                      ＋ 追加
+                    </button>
+                  ) : null}
+                </div>
               </div>
 
-              <button
-                onClick={() => handleSave(resident)}
-                disabled={isSaving}
-                className={`w-full py-2.5 text-white text-sm font-medium rounded-lg disabled:opacity-50 transition-colors ${style.button}`}
-              >
-                {isSaving ? '保存中...' : '保存'}
-              </button>
+              {isExpanded && (
+                <div className="px-3 pb-3 border-t border-slate-100 pt-3 bg-slate-50">
+                  <p className="text-xs text-slate-500 mb-3">── {mealLabels[mealType]}を追加 ──</p>
+
+                  <div className="grid grid-cols-3 gap-3 mb-4">
+                    {(['main', 'side', 'soup'] as const).map((field) => (
+                      <div key={field}>
+                        <label className="text-xs text-slate-600 block mb-1.5">
+                          {field === 'main' ? '主食' : field === 'side' ? '副食' : '汁物'}
+                        </label>
+                        <div className="flex gap-1">
+                          {amounts.map((v) => (
+                            <button
+                              key={v}
+                              onClick={() => updateInput(resident.id, field, v)}
+                              className={`flex-1 py-2 text-xs rounded-lg font-medium transition-colors ${
+                                input[field] === v ? style.selected : 'bg-white border border-slate-200 hover:bg-slate-100'
+                              }`}
+                            >
+                              {v === 0 ? '×' : v === 100 ? '全' : v}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setExpandedId(null)}
+                      className="flex-1 py-2.5 text-slate-600 text-sm font-medium rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition-colors"
+                    >
+                      キャンセル
+                    </button>
+                    <button
+                      onClick={() => handleSave(resident)}
+                      disabled={isSaving}
+                      className={`flex-1 py-2.5 text-white text-sm font-medium rounded-lg disabled:opacity-50 transition-colors ${style.button}`}
+                    >
+                      {isSaving ? '追加中...' : '✓ この記録を追加'}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           );
         })}
@@ -541,10 +598,12 @@ function MealInputList({ residents, records, today, savingId, setSavingId, onSav
 }
 
 // ========================================
-// 排泄一覧入力
+// 排泄一覧入力（折りたたみ式）
 // ========================================
 function ExcretionInputList({ residents, records, today, savingId, setSavingId, onSaved, onRecordSaved }: InputListProps) {
   const style = categoryStyles.excretion;
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [successId, setSuccessId] = useState<string | null>(null);
   const [inputs, setInputs] = useState<Record<string, { type: 'urine' | 'feces' | 'both'; amount: 'small' | 'medium' | 'large' }>>({});
 
   const getInput = (id: string) => inputs[id] || { type: 'urine', amount: 'medium' };
@@ -583,6 +642,10 @@ function ExcretionInputList({ residents, records, today, savingId, setSavingId, 
       });
       onSaved();
       onRecordSaved?.(resident.id);
+
+      setExpandedId(null);
+      setSuccessId(resident.id);
+      setTimeout(() => setSuccessId(null), 2000);
     } catch (error) {
       console.error('Save failed:', error);
     } finally {
@@ -590,66 +653,97 @@ function ExcretionInputList({ residents, records, today, savingId, setSavingId, 
     }
   };
 
-  const hasRecord = (id: string) => (records[id]?.excretions?.length ?? 0) > 0;
-
   return (
     <div className="space-y-2">
       {residents.map((resident) => {
         const input = getInput(resident.id);
-        const recorded = hasRecord(resident.id);
         const isSaving = savingId === resident.id;
+        const isExpanded = expandedId === resident.id;
+        const isSuccess = successId === resident.id;
 
         return (
           <div
             key={resident.id}
-            className={`bg-white rounded-xl p-3 shadow-sm border ${
-              recorded ? 'border-l-4 border-l-emerald-400 border-t-slate-100 border-r-slate-100 border-b-slate-100' : 'border-slate-100'
-            }`}
+            className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden"
           >
-            <ResidentHeader resident={resident} recorded={recorded} />
+            <div className="p-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-slate-800">{resident.name}</span>
+                  <span className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
+                    {resident.roomNumber}
+                  </span>
+                </div>
 
-            <div className="flex gap-2 mb-2">
-              <div className="flex-1">
-                <label className="text-xs text-slate-500 block mb-1">種類</label>
-                <div className="flex gap-1">
-                  {(['urine', 'feces', 'both'] as const).map((type) => (
-                    <button
-                      key={type}
-                      onClick={() => updateInput(resident.id, 'type', type)}
-                      className={`flex-1 py-2 text-xs rounded-lg font-medium transition-colors ${
-                        input.type === type ? style.selected : 'bg-slate-100 hover:bg-slate-200'
-                      }`}
-                    >
-                      {type === 'urine' ? '尿' : type === 'feces' ? '便' : '両方'}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div className="flex-1">
-                <label className="text-xs text-slate-500 block mb-1">量</label>
-                <div className="flex gap-1">
-                  {(['small', 'medium', 'large'] as const).map((amount) => (
-                    <button
-                      key={amount}
-                      onClick={() => updateInput(resident.id, 'amount', amount)}
-                      className={`flex-1 py-2 text-xs rounded-lg font-medium transition-colors ${
-                        input.amount === amount ? style.selected : 'bg-slate-100 hover:bg-slate-200'
-                      }`}
-                    >
-                      {amount === 'small' ? '少' : amount === 'medium' ? '中' : '多'}
-                    </button>
-                  ))}
-                </div>
+                {isSuccess ? (
+                  <span className="text-emerald-600 text-sm font-medium">✓ 追加しました</span>
+                ) : !isExpanded ? (
+                  <button
+                    onClick={() => setExpandedId(resident.id)}
+                    className={`px-4 py-2 text-white text-sm font-medium rounded-lg transition-colors ${style.button}`}
+                  >
+                    ＋ 追加
+                  </button>
+                ) : null}
               </div>
             </div>
 
-            <button
-              onClick={() => handleSave(resident)}
-              disabled={isSaving}
-              className={`w-full py-2.5 text-white text-sm font-medium rounded-lg disabled:opacity-50 transition-colors ${style.button}`}
-            >
-              {isSaving ? '保存中...' : '保存'}
-            </button>
+            {isExpanded && (
+              <div className="px-3 pb-3 border-t border-slate-100 pt-3 bg-slate-50">
+                <p className="text-xs text-slate-500 mb-3">── 排泄を追加 ──</p>
+
+                <div className="flex gap-3 mb-4">
+                  <div className="flex-1">
+                    <label className="text-xs text-slate-600 block mb-1.5">種類</label>
+                    <div className="flex gap-2">
+                      {(['urine', 'feces', 'both'] as const).map((type) => (
+                        <button
+                          key={type}
+                          onClick={() => updateInput(resident.id, 'type', type)}
+                          className={`flex-1 py-2.5 text-sm rounded-lg font-medium transition-colors ${
+                            input.type === type ? style.selected : 'bg-white border border-slate-200 hover:bg-slate-100'
+                          }`}
+                        >
+                          {type === 'urine' ? '尿' : type === 'feces' ? '便' : '両方'}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="flex-1">
+                    <label className="text-xs text-slate-600 block mb-1.5">量</label>
+                    <div className="flex gap-2">
+                      {(['small', 'medium', 'large'] as const).map((amount) => (
+                        <button
+                          key={amount}
+                          onClick={() => updateInput(resident.id, 'amount', amount)}
+                          className={`flex-1 py-2.5 text-sm rounded-lg font-medium transition-colors ${
+                            input.amount === amount ? style.selected : 'bg-white border border-slate-200 hover:bg-slate-100'
+                          }`}
+                        >
+                          {amount === 'small' ? '少' : amount === 'medium' ? '中' : '多'}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setExpandedId(null)}
+                    className="flex-1 py-2.5 text-slate-600 text-sm font-medium rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition-colors"
+                  >
+                    キャンセル
+                  </button>
+                  <button
+                    onClick={() => handleSave(resident)}
+                    disabled={isSaving}
+                    className={`flex-1 py-2.5 text-white text-sm font-medium rounded-lg disabled:opacity-50 transition-colors ${style.button}`}
+                  >
+                    {isSaving ? '追加中...' : '✓ この記録を追加'}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         );
       })}
@@ -658,10 +752,12 @@ function ExcretionInputList({ residents, records, today, savingId, setSavingId, 
 }
 
 // ========================================
-// 水分一覧入力
+// 水分一覧入力（折りたたみ式）
 // ========================================
 function HydrationInputList({ residents, records, today, savingId, setSavingId, onSaved, onRecordSaved }: InputListProps) {
   const style = categoryStyles.hydration;
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [successId, setSuccessId] = useState<string | null>(null);
   const [inputs, setInputs] = useState<Record<string, {
     amount: number | 'other';
     type: string;
@@ -682,7 +778,6 @@ function HydrationInputList({ residents, records, today, savingId, setSavingId, 
     const input = getInput(resident.id);
     setSavingId(resident.id);
 
-    // 「その他」の場合はカスタム値を使用
     const finalType = input.type === 'その他' ? (input.customType || 'その他') : input.type;
     const finalAmount = input.amount === 'other'
       ? (parseInt(input.customAmount) || 0)
@@ -705,6 +800,11 @@ function HydrationInputList({ residents, records, today, savingId, setSavingId, 
       });
       onSaved();
       onRecordSaved?.(resident.id);
+
+      // 成功表示して折りたたむ
+      setExpandedId(null);
+      setSuccessId(resident.id);
+      setTimeout(() => setSuccessId(null), 2000);
     } catch (error) {
       console.error('Save failed:', error);
     } finally {
@@ -712,7 +812,6 @@ function HydrationInputList({ residents, records, today, savingId, setSavingId, 
     }
   };
 
-  const hasRecord = (id: string) => (records[id]?.hydrations?.length ?? 0) > 0;
   const amounts: (number | 'other')[] = [100, 150, 200, 'other'];
   const types = ['お茶', '水', 'その他'];
 
@@ -720,80 +819,118 @@ function HydrationInputList({ residents, records, today, savingId, setSavingId, 
     <div className="space-y-2">
       {residents.map((resident) => {
         const input = getInput(resident.id);
-        const recorded = hasRecord(resident.id);
         const isSaving = savingId === resident.id;
+        const isExpanded = expandedId === resident.id;
+        const isSuccess = successId === resident.id;
         const showCustomType = input.type === 'その他';
         const showCustomAmount = input.amount === 'other';
 
         return (
           <div
             key={resident.id}
-            className={`bg-white rounded-xl p-3 shadow-sm border ${
-              recorded ? 'border-l-4 border-l-emerald-400 border-t-slate-100 border-r-slate-100 border-b-slate-100' : 'border-slate-100'
-            }`}
+            className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden"
           >
-            <ResidentHeader resident={resident} recorded={recorded} />
+            {/* ヘッダー部分（常に表示） */}
+            <div className="p-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-slate-800">{resident.name}</span>
+                  <span className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
+                    {resident.roomNumber}
+                  </span>
+                </div>
 
-            <div className="flex gap-2 mb-2">
-              <div className="flex-1">
-                <label className="text-xs text-slate-500 block mb-1">飲み物</label>
-                <div className="flex gap-1">
-                  {types.map((type) => (
-                    <button
-                      key={type}
-                      onClick={() => updateInput(resident.id, 'type', type)}
-                      className={`flex-1 py-2 text-xs rounded-lg font-medium transition-colors ${
-                        input.type === type ? style.selected : 'bg-slate-100 hover:bg-slate-200'
-                      }`}
-                    >
-                      {type}
-                    </button>
-                  ))}
-                </div>
-                {showCustomType && (
-                  <input
-                    type="text"
-                    value={input.customType}
-                    onChange={(e) => updateInput(resident.id, 'customType', e.target.value)}
-                    placeholder="飲み物を入力"
-                    className="mt-1 w-full px-2 py-1.5 text-xs border border-slate-200 rounded-lg focus:border-[#3a98c4] focus:ring-1 focus:ring-[#3a98c4] outline-none"
-                  />
-                )}
-              </div>
-              <div className="flex-1">
-                <label className="text-xs text-slate-500 block mb-1">量(ml)</label>
-                <div className="flex gap-1">
-                  {amounts.map((amount) => (
-                    <button
-                      key={amount}
-                      onClick={() => updateInput(resident.id, 'amount', amount)}
-                      className={`flex-1 py-2 text-xs rounded-lg font-medium transition-colors ${
-                        input.amount === amount ? style.selected : 'bg-slate-100 hover:bg-slate-200'
-                      }`}
-                    >
-                      {amount === 'other' ? '他' : amount}
-                    </button>
-                  ))}
-                </div>
-                {showCustomAmount && (
-                  <input
-                    type="number"
-                    value={input.customAmount}
-                    onChange={(e) => updateInput(resident.id, 'customAmount', e.target.value)}
-                    placeholder="ml"
-                    className="mt-1 w-full px-2 py-1.5 text-xs border border-slate-200 rounded-lg focus:border-[#3a98c4] focus:ring-1 focus:ring-[#3a98c4] outline-none text-center"
-                  />
-                )}
+                {isSuccess ? (
+                  <span className="text-emerald-600 text-sm font-medium flex items-center gap-1">
+                    ✓ 追加しました
+                  </span>
+                ) : !isExpanded ? (
+                  <button
+                    onClick={() => setExpandedId(resident.id)}
+                    className={`px-4 py-2 text-white text-sm font-medium rounded-lg transition-colors ${style.button}`}
+                  >
+                    ＋ 追加
+                  </button>
+                ) : null}
               </div>
             </div>
 
-            <button
-              onClick={() => handleSave(resident)}
-              disabled={isSaving}
-              className={`w-full py-2.5 text-white text-sm font-medium rounded-lg disabled:opacity-50 transition-colors ${style.button}`}
-            >
-              {isSaving ? '保存中...' : '保存'}
-            </button>
+            {/* 展開時の入力フォーム */}
+            {isExpanded && (
+              <div className="px-3 pb-3 border-t border-slate-100 pt-3 bg-slate-50">
+                <p className="text-xs text-slate-500 mb-3">── 水分を追加 ──</p>
+
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-xs text-slate-600 block mb-1.5">飲み物</label>
+                    <div className="flex gap-2">
+                      {types.map((type) => (
+                        <button
+                          key={type}
+                          onClick={() => updateInput(resident.id, 'type', type)}
+                          className={`flex-1 py-2.5 text-sm rounded-lg font-medium transition-colors ${
+                            input.type === type ? style.selected : 'bg-white border border-slate-200 hover:bg-slate-100'
+                          }`}
+                        >
+                          {type}
+                        </button>
+                      ))}
+                    </div>
+                    {showCustomType && (
+                      <input
+                        type="text"
+                        value={input.customType}
+                        onChange={(e) => updateInput(resident.id, 'customType', e.target.value)}
+                        placeholder="飲み物を入力"
+                        className="mt-2 w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-[#3a98c4] focus:ring-1 focus:ring-[#3a98c4] outline-none"
+                      />
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="text-xs text-slate-600 block mb-1.5">量（ml）</label>
+                    <div className="flex gap-2">
+                      {amounts.map((amount) => (
+                        <button
+                          key={amount}
+                          onClick={() => updateInput(resident.id, 'amount', amount)}
+                          className={`flex-1 py-2.5 text-sm rounded-lg font-medium transition-colors ${
+                            input.amount === amount ? style.selected : 'bg-white border border-slate-200 hover:bg-slate-100'
+                          }`}
+                        >
+                          {amount === 'other' ? '他' : amount}
+                        </button>
+                      ))}
+                    </div>
+                    {showCustomAmount && (
+                      <input
+                        type="number"
+                        value={input.customAmount}
+                        onChange={(e) => updateInput(resident.id, 'customAmount', e.target.value)}
+                        placeholder="数値を入力"
+                        className="mt-2 w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-[#3a98c4] focus:ring-1 focus:ring-[#3a98c4] outline-none text-center"
+                      />
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex gap-2 mt-4">
+                  <button
+                    onClick={() => setExpandedId(null)}
+                    className="flex-1 py-2.5 text-slate-600 text-sm font-medium rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition-colors"
+                  >
+                    キャンセル
+                  </button>
+                  <button
+                    onClick={() => handleSave(resident)}
+                    disabled={isSaving}
+                    className={`flex-1 py-2.5 text-white text-sm font-medium rounded-lg disabled:opacity-50 transition-colors ${style.button}`}
+                  >
+                    {isSaving ? '追加中...' : '✓ この記録を追加'}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         );
       })}
