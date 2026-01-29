@@ -1,12 +1,19 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { getResidents, getDailyRecord, saveDailyRecord } from '@/lib/firestore';
 import { getTodayString, formatTime, generateId } from '@/lib/utils';
 import { BottomNav } from '@/components/navigation/BottomNav';
 import type { Resident, DailyRecord, Vital, Meal, Excretion, Hydration } from '@/types';
 
 type RecordTab = 'vital' | 'meal' | 'excretion' | 'hydration';
+
+// ひらがな → カタカナ変換
+function hiraganaToKatakana(str: string): string {
+  return str.replace(/[\u3041-\u3096]/g, (match) =>
+    String.fromCharCode(match.charCodeAt(0) + 0x60)
+  );
+}
 
 // カテゴリカラー（2層システム：背景用パステル + ボタン用濃色）
 const categoryStyles = {
@@ -38,8 +45,37 @@ export default function RecordsInputPage() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<RecordTab>('vital');
   const [savingId, setSavingId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [recentIds, setRecentIds] = useState<string[]>([]);
 
   const today = getTodayString();
+
+  // 検索フィルタリング（ひらがな入力 → カタカナで検索）
+  const filteredResidents = useMemo(() => {
+    if (!searchQuery.trim()) return residents;
+    const query = hiraganaToKatakana(searchQuery.trim());
+    return residents.filter((r) =>
+      r.nameKana?.includes(query) ||
+      r.name.includes(searchQuery) ||
+      r.roomNumber?.includes(searchQuery)
+    );
+  }, [residents, searchQuery]);
+
+  // 最近記録した人（上位3名）
+  const recentResidents = useMemo(() => {
+    return recentIds
+      .map((id) => residents.find((r) => r.id === id))
+      .filter((r): r is Resident => r !== undefined)
+      .slice(0, 3);
+  }, [residents, recentIds]);
+
+  // 記録保存時に「最近」リストを更新
+  const handleRecordSaved = useCallback((residentId: string) => {
+    setRecentIds((prev) => {
+      const filtered = prev.filter((id) => id !== residentId);
+      return [residentId, ...filtered].slice(0, 10);
+    });
+  }, []);
 
   const loadData = useCallback(async () => {
     try {
@@ -79,6 +115,46 @@ export default function RecordsInputPage() {
           <h1 className="text-lg font-bold text-slate-800">記録入力</h1>
           <p className="text-sm text-slate-500">{today}</p>
         </div>
+
+        {/* 検索バー */}
+        <div className="px-4 pb-3">
+          <div className="relative">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="🔍 利用者を検索（ひらがな・部屋番号）"
+              className="w-full px-4 py-2.5 bg-slate-100 rounded-xl text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-300"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* 最近記録した人（検索中は非表示） */}
+        {!searchQuery && recentResidents.length > 0 && (
+          <div className="px-4 pb-3">
+            <p className="text-xs text-slate-500 mb-2">最近記録した人</p>
+            <div className="flex gap-2">
+              {recentResidents.map((r) => (
+                <button
+                  key={r.id}
+                  onClick={() => setSearchQuery(r.name)}
+                  className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-full text-xs font-medium text-slate-700 transition-colors"
+                >
+                  {r.name.split(' ')[0]} {r.roomNumber}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* タブ */}
         <div className="flex border-t border-slate-100">
           {tabs.map((tab) => {
@@ -109,45 +185,64 @@ export default function RecordsInputPage() {
           </div>
         ) : (
           <div className="space-y-2">
-            {activeTab === 'vital' && (
-              <VitalInputList
-                residents={residents}
-                records={records}
-                today={today}
-                savingId={savingId}
-                setSavingId={setSavingId}
-                onSaved={loadData}
-              />
+            {/* 検索結果の件数表示 */}
+            {searchQuery && (
+              <p className="text-xs text-slate-500 px-1">
+                {filteredResidents.length}名が見つかりました
+              </p>
             )}
-            {activeTab === 'meal' && (
-              <MealInputList
-                residents={residents}
-                records={records}
-                today={today}
-                savingId={savingId}
-                setSavingId={setSavingId}
-                onSaved={loadData}
-              />
-            )}
-            {activeTab === 'excretion' && (
-              <ExcretionInputList
-                residents={residents}
-                records={records}
-                today={today}
-                savingId={savingId}
-                setSavingId={setSavingId}
-                onSaved={loadData}
-              />
-            )}
-            {activeTab === 'hydration' && (
-              <HydrationInputList
-                residents={residents}
-                records={records}
-                today={today}
-                savingId={savingId}
-                setSavingId={setSavingId}
-                onSaved={loadData}
-              />
+
+            {filteredResidents.length === 0 ? (
+              <div className="text-center py-8 text-slate-400">
+                <p>該当する利用者がいません</p>
+              </div>
+            ) : (
+              <>
+                {activeTab === 'vital' && (
+                  <VitalInputList
+                    residents={filteredResidents}
+                    records={records}
+                    today={today}
+                    savingId={savingId}
+                    setSavingId={setSavingId}
+                    onSaved={loadData}
+                    onRecordSaved={handleRecordSaved}
+                  />
+                )}
+                {activeTab === 'meal' && (
+                  <MealInputList
+                    residents={filteredResidents}
+                    records={records}
+                    today={today}
+                    savingId={savingId}
+                    setSavingId={setSavingId}
+                    onSaved={loadData}
+                    onRecordSaved={handleRecordSaved}
+                  />
+                )}
+                {activeTab === 'excretion' && (
+                  <ExcretionInputList
+                    residents={filteredResidents}
+                    records={records}
+                    today={today}
+                    savingId={savingId}
+                    setSavingId={setSavingId}
+                    onSaved={loadData}
+                    onRecordSaved={handleRecordSaved}
+                  />
+                )}
+                {activeTab === 'hydration' && (
+                  <HydrationInputList
+                    residents={filteredResidents}
+                    records={records}
+                    today={today}
+                    savingId={savingId}
+                    setSavingId={setSavingId}
+                    onSaved={loadData}
+                    onRecordSaved={handleRecordSaved}
+                  />
+                )}
+              </>
             )}
           </div>
         )}
@@ -168,6 +263,7 @@ interface InputListProps {
   savingId: string | null;
   setSavingId: (id: string | null) => void;
   onSaved: () => void;
+  onRecordSaved?: (residentId: string) => void;
 }
 
 function ResidentHeader({ resident, recorded }: { resident: Resident; recorded: boolean }) {
@@ -191,7 +287,7 @@ function ResidentHeader({ resident, recorded }: { resident: Resident; recorded: 
 // ========================================
 // バイタル一覧入力
 // ========================================
-function VitalInputList({ residents, records, today, savingId, setSavingId, onSaved }: InputListProps) {
+function VitalInputList({ residents, records, today, savingId, setSavingId, onSaved, onRecordSaved }: InputListProps) {
   const [inputs, setInputs] = useState<Record<string, { temp: string; bpH: string; bpL: string; pulse: string; spo2: string }>>({});
   const style = categoryStyles.vital;
 
@@ -227,6 +323,7 @@ function VitalInputList({ residents, records, today, savingId, setSavingId, onSa
         vitals: [...(existing?.vitals || []), vital],
       });
       onSaved();
+      onRecordSaved?.(resident.id);
     } catch (error) {
       console.error('Save failed:', error);
     } finally {
@@ -318,7 +415,7 @@ function VitalInputList({ residents, records, today, savingId, setSavingId, onSa
 // ========================================
 // 食事一覧入力
 // ========================================
-function MealInputList({ residents, records, today, savingId, setSavingId, onSaved }: InputListProps) {
+function MealInputList({ residents, records, today, savingId, setSavingId, onSaved, onRecordSaved }: InputListProps) {
   const style = categoryStyles.meal;
   const [mealType, setMealType] = useState<'breakfast' | 'lunch' | 'dinner'>(() => {
     const hour = new Date().getHours();
@@ -359,6 +456,7 @@ function MealInputList({ residents, records, today, savingId, setSavingId, onSav
         meals: [...(existing?.meals || []), meal],
       });
       onSaved();
+      onRecordSaved?.(resident.id);
     } catch (error) {
       console.error('Save failed:', error);
     } finally {
@@ -445,7 +543,7 @@ function MealInputList({ residents, records, today, savingId, setSavingId, onSav
 // ========================================
 // 排泄一覧入力
 // ========================================
-function ExcretionInputList({ residents, records, today, savingId, setSavingId, onSaved }: InputListProps) {
+function ExcretionInputList({ residents, records, today, savingId, setSavingId, onSaved, onRecordSaved }: InputListProps) {
   const style = categoryStyles.excretion;
   const [inputs, setInputs] = useState<Record<string, { type: 'urine' | 'feces' | 'both'; amount: 'small' | 'medium' | 'large' }>>({});
 
@@ -484,6 +582,7 @@ function ExcretionInputList({ residents, records, today, savingId, setSavingId, 
         excretions: [...(existing?.excretions || []), cleanExcretion],
       });
       onSaved();
+      onRecordSaved?.(resident.id);
     } catch (error) {
       console.error('Save failed:', error);
     } finally {
@@ -561,7 +660,7 @@ function ExcretionInputList({ residents, records, today, savingId, setSavingId, 
 // ========================================
 // 水分一覧入力
 // ========================================
-function HydrationInputList({ residents, records, today, savingId, setSavingId, onSaved }: InputListProps) {
+function HydrationInputList({ residents, records, today, savingId, setSavingId, onSaved, onRecordSaved }: InputListProps) {
   const style = categoryStyles.hydration;
   const [inputs, setInputs] = useState<Record<string, {
     amount: number | 'other';
@@ -605,6 +704,7 @@ function HydrationInputList({ residents, records, today, savingId, setSavingId, 
         hydrations: [...(existing?.hydrations || []), hydration],
       });
       onSaved();
+      onRecordSaved?.(resident.id);
     } catch (error) {
       console.error('Save failed:', error);
     } finally {
