@@ -8,27 +8,27 @@ import type { Resident, DailyRecord, Vital, Meal, Excretion, Hydration } from '@
 
 type RecordTab = 'vital' | 'meal' | 'excretion' | 'hydration';
 
-// カテゴリカラー（同トーンのソフトパステル）
+// カテゴリカラー（2層システム：背景用パステル + ボタン用濃色）
 const categoryStyles = {
   vital: {
-    tab: 'text-[#c97476] bg-[#fce7e8] border-[#e8a5a7]',
-    button: 'bg-[#e8a5a7] hover:bg-[#d99496] active:bg-[#c97476]',
-    selected: 'bg-[#e8a5a7] text-white',
+    tab: 'text-[#c96567] bg-[#fce7e8] border-[#c96567]',
+    button: 'bg-[#c96567] hover:bg-[#b85557] active:bg-[#a74547]',
+    selected: 'bg-[#c96567] text-white',
   },
   meal: {
-    tab: 'text-[#4da672] bg-[#e6f7ed] border-[#86d4a8]',
-    button: 'bg-[#86d4a8] hover:bg-[#6bc492] active:bg-[#4da672]',
-    selected: 'bg-[#86d4a8] text-white',
+    tab: 'text-[#3d9d68] bg-[#e6f7ed] border-[#3d9d68]',
+    button: 'bg-[#3d9d68] hover:bg-[#358a5b] active:bg-[#2d774e]',
+    selected: 'bg-[#3d9d68] text-white',
   },
   excretion: {
-    tab: 'text-[#c9a44a] bg-[#fef6e6] border-[#f5c97a]',
-    button: 'bg-[#f5c97a] hover:bg-[#e8b85a] active:bg-[#c9a44a]',
-    selected: 'bg-[#f5c97a] text-white',
+    tab: 'text-[#c98a3d] bg-[#fef6e6] border-[#c98a3d]',
+    button: 'bg-[#c98a3d] hover:bg-[#b87a32] active:bg-[#a76a27]',
+    selected: 'bg-[#c98a3d] text-white',
   },
   hydration: {
-    tab: 'text-[#4a9ebe] bg-[#e6f5fb] border-[#7ec8e8]',
-    button: 'bg-[#7ec8e8] hover:bg-[#5eb8dc] active:bg-[#4a9ebe]',
-    selected: 'bg-[#7ec8e8] text-white',
+    tab: 'text-[#3a98c4] bg-[#e6f5fb] border-[#3a98c4]',
+    button: 'bg-[#3a98c4] hover:bg-[#3088b4] active:bg-[#2678a4]',
+    selected: 'bg-[#3a98c4] text-white',
   },
 };
 

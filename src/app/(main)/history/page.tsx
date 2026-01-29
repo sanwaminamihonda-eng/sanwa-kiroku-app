@@ -703,7 +703,7 @@ function EditModal({ type, item, record, residentId, date, onClose, onSaved }: E
                     key={v}
                     onClick={() => setMainDish(v)}
                     className={`flex-1 py-2 rounded-lg text-sm ${
-                      mainDish === v ? 'bg-[#86d4a8] text-white' : 'bg-slate-100'
+                      mainDish === v ? 'bg-[#3d9d68] text-white' : 'bg-slate-100'
                     }`}
                   >
                     {v === 0 ? '×' : v === 100 ? '全量' : `${v}%`}
@@ -719,7 +719,7 @@ function EditModal({ type, item, record, residentId, date, onClose, onSaved }: E
                     key={v}
                     onClick={() => setSideDish(v)}
                     className={`flex-1 py-2 rounded-lg text-sm ${
-                      sideDish === v ? 'bg-[#86d4a8] text-white' : 'bg-slate-100'
+                      sideDish === v ? 'bg-[#3d9d68] text-white' : 'bg-slate-100'
                     }`}
                   >
                     {v === 0 ? '×' : v === 100 ? '全量' : `${v}%`}
@@ -735,7 +735,7 @@ function EditModal({ type, item, record, residentId, date, onClose, onSaved }: E
                     key={v}
                     onClick={() => setSoup(v)}
                     className={`flex-1 py-2 rounded-lg text-sm ${
-                      soup === v ? 'bg-[#86d4a8] text-white' : 'bg-slate-100'
+                      soup === v ? 'bg-[#3d9d68] text-white' : 'bg-slate-100'
                     }`}
                   >
                     {v === 0 ? '×' : v === 100 ? '全量' : `${v}%`}
@@ -756,7 +756,7 @@ function EditModal({ type, item, record, residentId, date, onClose, onSaved }: E
                     key={t}
                     onClick={() => setExcType(t)}
                     className={`flex-1 py-2 rounded-lg text-sm ${
-                      excType === t ? 'bg-[#f5c97a] text-white' : 'bg-slate-100'
+                      excType === t ? 'bg-[#c98a3d] text-white' : 'bg-slate-100'
                     }`}
                   >
                     {t === 'urine' ? '尿' : t === 'feces' ? '便' : '両方'}
@@ -772,7 +772,7 @@ function EditModal({ type, item, record, residentId, date, onClose, onSaved }: E
                     key={a}
                     onClick={() => setExcAmount(a)}
                     className={`flex-1 py-2 rounded-lg text-sm ${
-                      excAmount === a ? 'bg-[#f5c97a] text-white' : 'bg-slate-100'
+                      excAmount === a ? 'bg-[#c98a3d] text-white' : 'bg-slate-100'
                     }`}
                   >
                     {a === 'small' ? '少' : a === 'medium' ? '中' : '多'}
@@ -793,7 +793,7 @@ function EditModal({ type, item, record, residentId, date, onClose, onSaved }: E
                     key={t}
                     onClick={() => setHydType(t)}
                     className={`flex-1 py-2 rounded-lg text-sm ${
-                      hydType === t ? 'bg-[#7ec8e8] text-white' : 'bg-slate-100'
+                      hydType === t ? 'bg-[#3a98c4] text-white' : 'bg-slate-100'
                     }`}
                   >
                     {t}
@@ -809,7 +809,7 @@ function EditModal({ type, item, record, residentId, date, onClose, onSaved }: E
                     key={a}
                     onClick={() => setHydAmount(a)}
                     className={`flex-1 py-2 rounded-lg text-sm ${
-                      hydAmount === a ? 'bg-[#7ec8e8] text-white' : 'bg-slate-100'
+                      hydAmount === a ? 'bg-[#3a98c4] text-white' : 'bg-slate-100'
                     }`}
                   >
                     {a}

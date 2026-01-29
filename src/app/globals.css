@@ -10,14 +10,22 @@
   --primary-light: #64748b;
   --primary-lighter: #e2e8f0;
 
-  /* カテゴリカラー（同トーンのソフトパステル） */
-  --vital: #f1a5a8;
+  /* カテゴリカラー（2層システム：背景用パステル + ボタン用濃色） */
+  --vital: #c96567;
+  --vital-hover: #b85557;
+  --vital-active: #a74547;
   --vital-light: #fce7e8;
-  --meal: #86d4a8;
+  --meal: #3d9d68;
+  --meal-hover: #358a5b;
+  --meal-active: #2d774e;
   --meal-light: #e6f7ed;
-  --excretion: #f5c97a;
+  --excretion: #c98a3d;
+  --excretion-hover: #b87a32;
+  --excretion-active: #a76a27;
   --excretion-light: #fef6e6;
-  --hydration: #7ec8e8;
+  --hydration: #3a98c4;
+  --hydration-hover: #3088b4;
+  --hydration-active: #2678a4;
   --hydration-light: #e6f5fb;
 
   /* アクセント（成功・完了） */
